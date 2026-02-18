@@ -14,7 +14,8 @@ When you run `/gen-ps-doc "Account Name"`, Claude will:
 2. **Assemble** a structured data dictionary from everything found
 3. **Generate** a formatted `.docx` using the official Ada PS Knowledge Transfer template structure
 4. **Save** to `./ps-knowledge-transfer/` in your working directory
-5. **Offer** an "enhance" follow-up to fill in richer narrative detail from Granola transcripts
+5. **Publish** a matching Notion page and return the URL
+6. **Offer** an "enhance" follow-up to fill in richer narrative detail from Granola transcripts
 
 ---
 
@@ -33,6 +34,7 @@ pip install python-docx
 | **Glean** | Salesforce opp data, account context, and **Gong call transcripts** |
 | **Granola** | Recent meeting notes |
 | **Slack** | Your name/profile (SC field) |
+| **Notion** | Publish a live page alongside the .docx |
 | **Ada** *(optional)* | Bot metrics if account has a connected bot |
 
 > **Note on Gong:** There is no standalone Gong MCP. Gong calls are accessed via Glean's Gong connector — make sure your Glean workspace has Gong indexed.
@@ -87,7 +89,8 @@ Copy the contents of `commands/` to `~/.claude/commands/` and `scripts/` to `~/.
 
 ## Output
 
-- **File**: `./ps-knowledge-transfer/PS_Knowledge_Transfer_<account>_<date>.docx`
+- **`.docx` file**: `./ps-knowledge-transfer/PS_Knowledge_Transfer_<account>_<date>.docx`
+- **Notion page**: Created automatically — URL returned at the end
 - **Sections**: General Scoping (always), + Email and/or Voice if specified
 - **File path** copied to clipboard automatically (macOS)
 
@@ -155,6 +158,9 @@ Granola only has notes for meetings that were recorded in the Granola app.
 
 **Gong returns no results**
 Make sure your Glean workspace has the Gong connector enabled and calls are indexed. If not available, those fields will be marked TBD.
+
+**Notion page not created**
+Make sure the Notion MCP is connected in Claude Code. The page will be created at workspace level if no "PS Knowledge Transfer" parent page is found.
 
 **SC name shows as "SC"**
 Slack profile lookup failed — Claude will still generate the doc and you can edit the name in the `.docx`.

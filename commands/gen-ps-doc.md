@@ -1,7 +1,7 @@
 ---
 description: Generate a Pre-Sales → PS Knowledge Transfer .docx for any account (fetches live data from Glean, Granola, Gong & Slack)
 argument-hint: "<account name> [general] [email] [voice]"
-allowed-tools: Bash, Read, mcp__glean__chat, mcp__glean__search, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__query_granola_meetings, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__list_meetings, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__get_meetings, mcp__28d90b4b-0f1f-4d6d-96f3-e7a6107a9d3c__slack_search_public_and_private, mcp__28d90b4b-0f1f-4d6d-96f3-e7a6107a9d3c__slack_read_user_profile, mcp__ada__get_ada_metric, mcp__ada__get_ada_configuration
+allowed-tools: Bash, Read, mcp__glean__chat, mcp__glean__search, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__query_granola_meetings, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__list_meetings, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__get_meetings, mcp__28d90b4b-0f1f-4d6d-96f3-e7a6107a9d3c__slack_search_public_and_private, mcp__28d90b4b-0f1f-4d6d-96f3-e7a6107a9d3c__slack_read_user_profile, mcp__ada__get_ada_metric, mcp__ada__get_ada_configuration, mcp__729d2fa9-4409-4a97-838a-8eb8d2b766cf__notion-create-pages, mcp__729d2fa9-4409-4a97-838a-8eb8d2b766cf__notion-search
 ---
 
 # Generate PS Knowledge Transfer Doc
@@ -165,10 +165,133 @@ echo "<filepath>" | pbcopy
 
 ---
 
-## Step 5: Report Back to the User
+## Step 5: Publish to Notion
+
+Create a Notion page that mirrors the content of the generated doc.
+
+### 5a — Find or confirm parent page (optional)
+- Search Notion for an existing "PS Knowledge Transfer" or "Pre-Sales Handoffs" page to use as parent:
+  ```
+  notion-search query: "PS Knowledge Transfer handoff"
+  ```
+- If a clear parent page is found, use its ID. If not, create the page at workspace level (no parent).
+
+### 5b — Build the Notion page content
+
+Use Notion-flavored Markdown to construct the page. Mirror the .docx structure:
+
+```markdown
+# Sales to PS Handoff — [Account Name]
+
+**Generated:** [Date] | **SC:** [SC Name]
+**Sections:** [General] [Email?] [Voice?]
+
+---
+
+## Client Overview
+
+| Field | Value |
+|---|---|
+| Company | [value] |
+| HQ | [value] |
+| Industry | [value] |
+| Timezone | [value] |
+| Current Stack | [value] |
+| Key Contacts | [formatted contacts] |
+
+## Opportunity
+
+| Field | Value |
+|---|---|
+| Stage | [value] |
+| ARR | [value] |
+| Close Date | [value] |
+| Channels | [value] |
+| Salesforce | [SFDC URL as link] |
+
+## Use Cases & Business Drivers
+
+**Primary Use Case:** [value]
+
+**Secondary Use Cases:**
+- [use case 1]
+- [use case 2]
+
+**Business Drivers:**
+- [driver 1]
+- [driver 2]
+
+## Technical Architecture
+
+| System | Tool |
+|---|---|
+| CRM | [value] |
+| Ticketing | [value] |
+| [other key] | [value] |
+
+## Key Volumes
+
+| Metric | Value |
+|---|---|
+| Monthly Chat | [value] |
+| Agents | [value] |
+| [other] | [value] |
+
+## Risks & Blockers
+
+- [risk 1]
+- [risk 2]
+
+## Next Steps
+
+- [step 1]
+- [step 2]
+
+## Demo Recap
+
+**Date:** [value]
+**Feedback:** [value]
+**Gong Recording:** [URL as link, or TBD]
+
+## Gong Call Highlights
+
+[For each Gong call found:]
+### [Call Title] — [Date]
+- **Pain Points:** [list]
+- **Use Cases:** [list]
+- **Objections:** [list]
+- **Tech Mentions:** [list]
+- **Sentiment:** [value]
+- **Recording:** [URL]
+
+## Meeting Notes (Granola)
+
+[For each meeting:]
+### [Meeting Title] — [Date]
+[Summary]
+
+[Include Email and/or Voice sections if applicable, matching the .docx structure]
+```
+
+### 5c — Create the Notion page
+```
+notion-create-pages({
+  pages: [{
+    properties: { title: "PS Handoff — [Account Name] — [YYYY-MM-DD]" },
+    content: "[full markdown from 5b]"
+  }]
+})
+```
+
+Save the returned Notion page URL.
+
+---
+
+## Step 6: Report Back to the User
 
 Tell the user:
-- ✅ File name and full path
+- ✅ `.docx` file name and full path (copied to clipboard)
+- ✅ Notion page URL
 - Which sections were included (General / Email / Voice)
 - Key data that was auto-filled vs left as TBD
 - Offer: *"Say **'enhance ps doc for [account]'** and I'll query Granola transcripts and Gong calls to fill in the TBD fields with richer detail."*
