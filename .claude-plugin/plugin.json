@@ -1,0 +1,9 @@
+{
+  "name": "gen-ps-doc",
+  "version": "1.0.0",
+  "description": "Generate a Pre-Sales → PS Knowledge Transfer .docx by gathering live data from Glean, Granola, and Slack. No cache or config file required — works for any SC.",
+  "author": {
+    "name": "Ishaq Unjhawala",
+    "email": "ishaq.unjhawala@ada.support"
+  }
+}

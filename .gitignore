@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# macOS
+.DS_Store
+
+# Claude local settings (never commit these)
+.claude/*.local.md
+
+# Generated docs (output artefacts, not source)
+ps-knowledge-transfer/
+
+# Temp files used during generation
+/tmp/ps_doc_data.json
