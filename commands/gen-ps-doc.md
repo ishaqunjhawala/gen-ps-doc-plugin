@@ -169,16 +169,21 @@ echo "<filepath>" | pbcopy
 
 **This step is MANDATORY — always run it, every time. Do NOT skip it or ask the user if they want it. A Notion page is always created alongside the .docx.**
 
-### 5a — Find or confirm parent page (optional)
-- Search Notion for an existing "PS Knowledge Transfer" or "Pre-Sales Handoffs" page to use as parent:
-  ```
-  notion-search query: "PS Knowledge Transfer handoff"
-  ```
-- If a clear parent page is found, use its ID. If not, create the page at workspace level (no parent).
+### 5a — Parent page
+The canonical Notion template lives at:
+- **Template page ID**: `30b6162e53cd80f8b9d1c151f5eebf08`
+- **Template URL**: https://www.notion.so/adasupport/MAKE-A-COPY-Pre-Sales-PS-Knowledge-Transfer-TEMPLATE-30b6162e53cd80f8b9d1c151f5eebf08
+
+Search Notion for an existing parent/folder page to house the generated doc:
+```
+notion-search query: "PS Knowledge Transfer handoff"
+```
+- If a clear parent page is found (e.g. a "PS Handoffs" index page), use its page ID as parent.
+- If not found, create the page at workspace level (no parent) — **do NOT use the template page itself as parent**.
 
 ### 5b — Build the Notion page content
 
-**CRITICAL: The Notion page must use the EXACT same field names and section structure as the .docx template. Do NOT invent new section names or reorganise into a narrative format. This is a structured scoping form, not a strategy brief.**
+**CRITICAL: The Notion page must use the EXACT same field names and section structure as the official Ada PS KT template (link above). Do NOT invent new section names or reorganise into a narrative format. This is a structured scoping form, not a strategy brief. Copy the field names character-for-character from this template.**
 
 Use Notion-flavored Markdown to construct the page:
 
@@ -194,24 +199,24 @@ Use Notion-flavored Markdown to construct the page:
 
 | Field | SC Input |
 |---|---|
-| **Client Overview** *(Overview of Account + Business case with Ada)* | [platform/industry, HQ, business drivers] |
-| **SFDC Opp** | [SFDC URL] |
-| **Solution Survey** | TBD |
+| **Client Overview** *(Overview of Account + Business case with Ada)* | [company overview, HQ, industry, key business drivers for adopting Ada] |
+| **SFDC Opp** | [link to Salesforce opportunity] |
+| **Solution Survey** | [link to solution survey, or TBD] |
 | **Key client stakeholders & Roles** | [Name — Role, one per line] |
-| **Timezone** | [value] |
-| **Channels currently supported** | [chat volume, email volume, agents count] |
-| **Agent Tech Stack** | [CRM, ticketing, CCaaS tools] |
-| **KB Readiness** *(Formatted and ready for AI agent ingestion or updates required)* | TBD — needs assessment |
-| **Project Scope** *(Phase 1 / Phase 2 / Phase 3)* | Phase 1: [primary use case] Phase 2: [secondary use case] |
-| **Expected Launch Date** | [close date] |
-| **Success Criteria 30 days post launch** | [demo feedback or TBD] |
-| **Channels** *(What channels will they plan to deploy on?)* | [Chat / Email / Voice] |
-| **Language Requirements** | [value or English] |
-| **APIs / Personalization / Authentication Requirements** | [key architecture dict] |
-| **Segmentation Requirements** | TBD |
-| **Product promises made to the client / FRs?** | [any commitments made by Ada] |
-| **Cluster** | Maple |
-| **Number of AI Agents** | [value] |
+| **Timezone** | [e.g. EST, PST, GMT] |
+| **Channels currently supported** | [chat monthly volume, email volume, agents count] |
+| **Agent Tech Stack** | [CRM, ticketing system, CCaaS tools — comma separated] |
+| **KB Readiness** *(Formatted and ready for AI agent ingestion or updates required for AI ingestion)* | TBD — needs assessment |
+| **Project Scope** *(What will Phase 1 include? Phase 2? Phase 3?)* | Phase 1: [primary use case] Phase 2: [secondary use case] |
+| **Expected Launch Date?** | [close date from SFDC] |
+| **Success Criteria 30 days post launch** | [e.g. "30% Automated Resolution rate", or TBD] |
+| **Channels** *(What channels will they plan to deploy on?)* | [Messaging / Email / Voice / Social Channels] |
+| **Language Requirements** | [What languages will the AI Agent support? Default: English] |
+| **APIs / Personalization / Authentication Requirements** | [List use cases requiring APIs/integrations and whether they have been scoped] |
+| **Segmentation Requirements** | [Any use cases or requirements for segmentation? Or TBD] |
+| **Product promises made to the client / FRs?** | [e.g. "Data API", or TBD] |
+| **Cluster** | [US / US2 / Maple / EU — default Maple] |
+| **Number of Ai Agents** | [value or TBD] |
 
 ### Miscellaneous
 
