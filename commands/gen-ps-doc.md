@@ -178,82 +178,158 @@ echo "<filepath>" | pbcopy
 
 ### 5b — Build the Notion page content
 
-Use Notion-flavored Markdown to construct the page. Mirror the .docx structure:
+**CRITICAL: The Notion page must use the EXACT same field names and section structure as the .docx template. Do NOT invent new section names or reorganise into a narrative format. This is a structured scoping form, not a strategy brief.**
+
+Use Notion-flavored Markdown to construct the page:
 
 ```markdown
-# Sales to PS Handoff — [Account Name]
+# Sales to Professional Services Handoff — [Account Name]
 
 **Generated:** [Date] | **SC:** [SC Name]
-**Sections:** [General] [Email?] [Voice?]
+**Sections:** [General] [Email if applicable] [Voice if applicable]
 
 ---
 
-## Client Overview
+## GENERAL SCOPING
 
-| Field | Value |
+| Field | SC Input |
 |---|---|
-| Company | [value] |
-| HQ | [value] |
-| Industry | [value] |
-| Timezone | [value] |
-| Current Stack | [value] |
-| Key Contacts | [formatted contacts] |
+| **Client Overview** *(Overview of Account + Business case with Ada)* | [platform/industry, HQ, business drivers] |
+| **SFDC Opp** | [SFDC URL] |
+| **Solution Survey** | TBD |
+| **Key client stakeholders & Roles** | [Name — Role, one per line] |
+| **Timezone** | [value] |
+| **Channels currently supported** | [chat volume, email volume, agents count] |
+| **Agent Tech Stack** | [CRM, ticketing, CCaaS tools] |
+| **KB Readiness** *(Formatted and ready for AI agent ingestion or updates required)* | TBD — needs assessment |
+| **Project Scope** *(Phase 1 / Phase 2 / Phase 3)* | Phase 1: [primary use case] Phase 2: [secondary use case] |
+| **Expected Launch Date** | [close date] |
+| **Success Criteria 30 days post launch** | [demo feedback or TBD] |
+| **Channels** *(What channels will they plan to deploy on?)* | [Chat / Email / Voice] |
+| **Language Requirements** | [value or English] |
+| **APIs / Personalization / Authentication Requirements** | [key architecture dict] |
+| **Segmentation Requirements** | TBD |
+| **Product promises made to the client / FRs?** | [any commitments made by Ada] |
+| **Cluster** | Maple |
+| **Number of AI Agents** | [value] |
 
-## Opportunity
+### Miscellaneous
 
-| Field | Value |
+| Field | SC Input |
 |---|---|
-| Stage | [value] |
-| ARR | [value] |
-| Close Date | [value] |
-| Channels | [value] |
-| Salesforce | [SFDC URL as link] |
+| **Enrolled in Ada Academy** | No (pre-signature) |
+| **Security Requirements** | TBD |
+| **Link + invites to Demo/Sandbox instance** | [Gong call URL or TBD] |
+| **Pilot / Opt out** | TBD |
+| **Additional Notes / Risks** | [risks list] |
 
-## Use Cases & Business Drivers
+## KEY NEXT STEPS
 
-**Primary Use Case:** [value]
+*From Platform Demo — [demo date]*
 
-**Secondary Use Cases:**
-- [use case 1]
-- [use case 2]
+1. [next step 1]
+2. [next step 2]
 
-**Business Drivers:**
-- [driver 1]
-- [driver 2]
+## MEETING NOTES (from Granola)
 
-## Technical Architecture
+[For each of the last 5 meetings:]
+**[Meeting Title]** ([Date])
+[Summary]
 
-| System | Tool |
+---
+
+[If email section requested:]
+## EMAIL SCOPING
+
+### Email Architecture
+
+| Field | SC Input |
 |---|---|
-| CRM | [value] |
-| Ticketing | [value] |
-| [other key] | [value] |
+| **Tech Stack** *(Is the system your agents use to receive and respond to emails the same as your chat?)* | [value] |
+| **Email landscape** *(Which email address(es) are your customers emailing?)* | TBD |
+| **Webform** *(Do you have a webform or contact form on your website?)* | TBD |
+| **Custom / Filter Incoming Emails** | TBD |
+| **AI Agent / Human support** *(Which email address will the AI Agent respond as?)* | TBD |
+| **Launch plan** *(Do you require a gradual rollout?)* | TBD |
 
-## Key Volumes
+### Email Configuration
 
-| Metric | Value |
+| Field | SC Input |
 |---|---|
-| Monthly Chat | [value] |
-| Agents | [value] |
-| [other] | [value] |
+| **Knowledge Base** *(Any additional sources specific to email?)* | TBD |
+| **Use cases** *(Any use cases unique to email vs chat/voice?)* | TBD |
+| **Workflow Mapping** | TBD |
+| **CC Support** | TBD |
+| **Metadata** | TBD |
 
-## Risks & Blockers
+### Email Handoffs
 
-- [risk 1]
-- [risk 2]
+| Field | SC Input |
+|---|---|
+| **Email / Ticketing** | TBD |
+| **Routing** | TBD |
 
-## Next Steps
+### Additional Requirements
 
-- [step 1]
-- [step 2]
+| Field | SC Input |
+|---|---|
+| **Authentication** | TBD |
+| **Conversation Start** | TBD |
 
-## Demo Recap
+---
 
-**Date:** [value]
-**Feedback:** [value]
-**Gong Recording:** [URL as link, or TBD]
+[If voice section requested:]
+## VOICE SCOPING
 
-## Gong Call Highlights
+### Voice Architecture
+
+| Field | SC Input |
+|---|---|
+| **Telephony Provider** | TBD |
+| **CCaaS / Agent System** | TBD |
+| **SIP Integration Type** | TBD |
+| **Current IVR** | TBD |
+| **Inbound vs Outbound** | Inbound only |
+| **Call Volume** | [value] |
+| **Current Agent Count** | [value] |
+| **Missed Call Rate** | TBD |
+
+### Voice Use Cases
+
+| Field | SC Input |
+|---|---|
+| **Primary Voice Use Case** | [value] |
+| **Call Categorization / Triage** | TBD |
+| **Secondary Voice Use Cases** | [value] |
+
+### Voice Technical Requirements
+
+| Field | SC Input |
+|---|---|
+| **APIs Required for Voice** | [value] |
+| **DTMF / Dial Pad Input** | TBD |
+| **SMS Capabilities** | TBD |
+| **Cross-Channel Interoperability** | TBD |
+
+### Voice Handoffs
+
+| Field | SC Input |
+|---|---|
+| **Handoff to Human Agents** | TBD |
+| **Routing Requirements** | TBD |
+
+### Voice Quality & Success Criteria
+
+| Field | SC Input |
+|---|---|
+| **Voice Quality Feedback from Demo** | [value] |
+| **Success Criteria for Voice** | TBD |
+| **Voice-Specific Risks** | [value] |
+| **Timeline** | [close date] |
+
+---
+
+## GONG CALL HIGHLIGHTS
 
 [For each Gong call found:]
 ### [Call Title] — [Date]
@@ -263,14 +339,6 @@ Use Notion-flavored Markdown to construct the page. Mirror the .docx structure:
 - **Tech Mentions:** [list]
 - **Sentiment:** [value]
 - **Recording:** [URL]
-
-## Meeting Notes (Granola)
-
-[For each meeting:]
-### [Meeting Title] — [Date]
-[Summary]
-
-[Include Email and/or Voice sections if applicable, matching the .docx structure]
 ```
 
 ### 5c — Create the Notion page
