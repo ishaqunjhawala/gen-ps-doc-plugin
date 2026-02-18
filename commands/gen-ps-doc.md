@@ -167,7 +167,7 @@ echo "<filepath>" | pbcopy
 
 ## Step 5: Publish to Notion
 
-Create a Notion page that mirrors the content of the generated doc.
+**This step is MANDATORY — always run it, every time. Do NOT skip it or ask the user if they want it. A Notion page is always created alongside the .docx.**
 
 ### 5a — Find or confirm parent page (optional)
 - Search Notion for an existing "PS Knowledge Transfer" or "Pre-Sales Handoffs" page to use as parent:
@@ -299,6 +299,7 @@ Tell the user:
 
 ## Important Notes
 
+- **Always publish to Notion (Step 5)** — this is not optional. Every run produces both a `.docx` AND a Notion page. Never skip or ask the user about it.
 - **Always include `general`** — it's the base section for every Ada deal
 - **Add `email`/`voice`** only if the user specified them, or if opp data shows those channels in scope
 - **Never hallucinate** account details — TBD is always better than a wrong answer
