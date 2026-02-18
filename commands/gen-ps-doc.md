@@ -293,8 +293,7 @@ Tell the user:
 - ✅ `.docx` file name and full path (copied to clipboard)
 - ✅ Notion page URL
 - Which sections were included (General / Email / Voice)
-- Key data that was auto-filled vs left as TBD
-- Offer: *"Say **'enhance ps doc for [account]'** and I'll query Granola transcripts and Gong calls to fill in the TBD fields with richer detail."*
+- Key data that was auto-filled vs left as TBD (fields marked TBD need manual input)
 
 ---
 

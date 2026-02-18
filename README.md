@@ -15,7 +15,6 @@ When you run `/gen-ps-doc "Account Name"`, Claude will:
 3. **Generate** a formatted `.docx` using the official Ada PS Knowledge Transfer template structure
 4. **Save** to `./ps-knowledge-transfer/` in your working directory
 5. **Publish** a matching Notion page and return the URL
-6. **Offer** an "enhance" follow-up to fill in richer narrative detail from Granola transcripts
 
 ---
 
@@ -115,15 +114,6 @@ Fields not found are marked **TBD** — never hallucinated.
 
 ---
 
-## AI Enhancement (optional follow-up)
-
-After generating, say:
-
-> *"enhance ps doc for [Account Name]"*
-
-Claude will query Granola transcripts and Gong calls to fill in richer narrative detail in the TBD fields.
-
----
 
 ## File Structure
 
