@@ -1,12 +1,12 @@
 ---
-description: Generate a Pre-Sales → PS Knowledge Transfer .docx for any account (fetches live data from Glean, Granola & Slack)
+description: Generate a Pre-Sales → PS Knowledge Transfer .docx for any account (fetches live data from Glean, Granola, Gong & Slack)
 argument-hint: "<account name> [general] [email] [voice]"
 allowed-tools: Bash, Read, mcp__glean__chat, mcp__glean__search, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__query_granola_meetings, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__list_meetings, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__get_meetings, mcp__28d90b4b-0f1f-4d6d-96f3-e7a6107a9d3c__slack_search_public_and_private, mcp__28d90b4b-0f1f-4d6d-96f3-e7a6107a9d3c__slack_read_user_profile, mcp__ada__get_ada_metric, mcp__ada__get_ada_configuration
 ---
 
 # Generate PS Knowledge Transfer Doc
 
-Generate a formatted Pre-Sales → PS Knowledge Transfer `.docx` by gathering live data from Glean (Salesforce), Granola (meeting notes), and Slack. No cache or config file needed.
+Generate a formatted Pre-Sales → PS Knowledge Transfer `.docx` by gathering live data from Glean (Salesforce + Gong), Granola (meeting notes), and Slack. No cache or config file needed.
 
 ## Arguments
 
@@ -41,7 +41,24 @@ Query:
 - Call `query_granola_meetings` with query: `"[account name] meeting notes action items demo discovery"`
 - Then call `get_meetings` for the 5 most recent account-related meetings to get full details
 
-### 2d — Ada Bot (skip if no bot mentioned)
+### 2d — Gong Call Transcripts (via Glean)
+Glean indexes Gong calls — search for the most recent calls with this account:
+
+Search 1 (keyword search for recent calls):
+> Use `mcp__glean__search` with query: `"[account name]"`, app filter: `"gong"`, limit: 5, sort by recency
+
+Search 2 (semantic search for key details):
+> Use `mcp__glean__chat` with message: "Summarize the most recent Gong calls with [account name]. Extract: key pain points discussed, use cases mentioned, objections raised, technical requirements, pricing discussions, sentiment, next steps agreed, and any Gong call URLs."
+
+From the Gong results extract:
+- **Call summaries** — what was discussed in each call (pain points, use cases, objections)
+- **Tech stack mentions** — any tools, systems, or integrations mentioned
+- **Volume/scale data** — conversation volumes, agent counts, ticket volumes
+- **Sentiment & buying signals** — champion strength, executive engagement, urgency
+- **Gong call URLs** — direct links to individual call recordings
+- **Most recent call date** — for the `demo_recap` field
+
+### 2e — Ada Bot (skip if no bot mentioned)
 - If Glean context mentions an Ada bot or demo instance for this account:
   - Call `get_ada_configuration` — playbooks, actions, custom instructions
   - Call `get_ada_metric` for `resolution_rate` and `csat_rate` (last 7 days)
@@ -92,6 +109,20 @@ data = {
     },
     "granola_notes": [
         {"title": "<meeting title>", "date": "<YYYY-MM-DD>", "summary": "<key points>"},
+    ],
+    "gong_calls": [
+        {
+            "date": "<YYYY-MM-DD>",
+            "title": "<call title>",
+            "url": "<Gong call URL>",
+            "pain_points": ["<pain point 1>", "<pain point 2>"],
+            "use_cases_mentioned": ["<use case 1>"],
+            "objections": ["<objection 1>"],
+            "tech_mentions": ["<tool or system mentioned>"],
+            "volume_data": "<any volume/scale info mentioned>",
+            "sentiment": "<positive / mixed / negative>",
+            "next_steps": ["<agreed next step>"],
+        }
     ],
     "sc_name": "<SC full name>",
 }
@@ -151,3 +182,5 @@ Tell the user:
 - **Never hallucinate** account details — TBD is always better than a wrong answer
 - **Output dir** defaults to `./ps-knowledge-transfer/` relative to the user's current working directory
 - **Script location** is `${CLAUDE_PLUGIN_ROOT}/scripts/ps_doc_skill.py` — this resolves correctly regardless of where the plugin is installed
+- **Gong via Glean** — there is no standalone Gong MCP; use `mcp__glean__search` with `app: "gong"` and `mcp__glean__chat` to search indexed Gong transcripts. If Glean doesn't return Gong results, note it as TBD — don't skip the attempt
+- **Gong data enriches**: pain points, tech stack, volumes, objections, and sentiment — prioritise these for the `business_drivers`, `risks`, `key_volumes`, and `key_architecture` fields
