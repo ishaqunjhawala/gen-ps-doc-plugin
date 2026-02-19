@@ -115,6 +115,14 @@ Check the Salesforce `product_channels` field and Phase 1 scoping discussions:
 
 **CRITICAL: This is a structured scoping form — NOT a narrative brief. Use the exact table structure below. Every table cell must be filled with REAL data extracted from Gong, Granola, and Glean. TBD is only for fields where no data was found anywhere. The Chat, Email, and Voice scoping tables are the most important part of this document.**
 
+**FORMATTING RULES — always apply these when writing the doc content:**
+- **Multi-item table cells** (contacts, use cases, APIs, risks, tech stack items, languages): each item must be on its own line using `<br>` to separate items within a table cell. Never write them as a comma-separated inline list when there are 2+ items.
+- **Numbered lists** (KEY NEXT STEPS, any ordered sequence): always use `1.`, `2.`, `3.` on separate lines with a blank line before the list starts. Never inline numbered items.
+- **Bullet lists** (Gong highlights — pain points, use cases, objections, tech mentions): always use `-` on separate lines with a blank line before the list starts. Never inline bullet items.
+- **Meeting notes** (MEETING NOTES section): each meeting gets its own block — bold title + date on one line, then the summary on the next line(s). Separate meetings with a blank line.
+- **Project Scope field**: Phase 1, Phase 2, Phase 3 each on a new line using `<br>` — e.g. `Phase 1: [use case]<br>Phase 2: [use case]<br>Phase 3: [use case]`
+- **Key client stakeholders field**: one contact per line using `<br>` — e.g. `John Smith — VP Engineering<br>Jane Doe — Head of CX`
+
 Construct the full document content as Markdown. Substitute ALL placeholders with real data before creating the doc.
 
 ```markdown
@@ -131,12 +139,12 @@ Construct the full document content as Markdown. Substitute ALL placeholders wit
 | **Client Overview** *(Overview of Account + Business case with Ada)* | [company overview + HQ + industry + key business drivers] |
 | **SFDC Opp** | [Salesforce URL] |
 | **Solution Survey** | [link or TBD] |
-| **Key client stakeholders & Roles** | [Name — Role (one per line)] |
+| **Key client stakeholders & Roles** | [Name — Role<br>Name — Role<br>(one per line using \<br\>)] |
 | **Timezone** | [timezone] |
 | **Channels currently supported** | [chat: X/mo, email: X/mo, voice: X calls/mo] |
 | **Agent Tech Stack** | [CRM, ticketing, CCaaS, chat platform] |
 | **KB Readiness** *(Formatted and ready for AI agent ingestion or updates required for AI ingestion)* | [assessment from discussions or TBD] |
-| **Project Scope** *(What will Phase 1 include? Phase 2? Phase 3?)* | Phase 1: [primary use case] / Phase 2: [secondary] / Phase 3: [tertiary] |
+| **Project Scope** *(What will Phase 1 include? Phase 2? Phase 3?)* | Phase 1: [primary use case]<br>Phase 2: [secondary]<br>Phase 3: [tertiary] |
 | **Expected Launch Date?** | [close date from SFDC] |
 | **Success Criteria 30 days post launch** | [from discussions or TBD] |
 | **Channels** *(What channels will they plan to deploy on?)* | [Chat / Email / Voice] |
@@ -161,11 +169,15 @@ Construct the full document content as Markdown. Substitute ALL placeholders wit
 
 *From Platform Demo — [demo date]*
 
-[List every next step found in Gong calls and Granola meeting notes, numbered]
+1. [next step]
+2. [next step]
+3. [next step]
 
 ## MEETING NOTES (from Granola)
 
-[For each of the last 5 meetings:]
+**[Meeting Title]** ([Date])
+[Summary of key points discussed]
+
 **[Meeting Title]** ([Date])
 [Summary of key points discussed]
 
@@ -292,14 +304,24 @@ Construct the full document content as Markdown. Substitute ALL placeholders wit
 
 ## GONG CALL HIGHLIGHTS
 
-[For each Gong call found:]
 ### [Call Title] — [Date]
-- **Pain Points:** [list]
-- **Use Cases:** [list]
-- **Objections:** [list]
-- **Tech Mentions:** [list]
-- **Sentiment:** [value]
-- **Recording:** [URL]
+
+**Pain Points:**
+- [item]
+- [item]
+
+**Use Cases:**
+- [item]
+- [item]
+
+**Objections:**
+- [item]
+
+**Tech Mentions:**
+- [item]
+
+**Sentiment:** [value]
+**Recording:** [URL]
 ```
 
 ---
