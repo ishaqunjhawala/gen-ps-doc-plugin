@@ -50,6 +50,16 @@ git clone https://github.com/ishaqunjhawala/gen-ps-doc-plugin
 cp gen-ps-doc-plugin/commands/gen-ps-doc.md ~/.claude/commands/gen-ps-doc.md
 ```
 
+### Post-install: Add your Granola & Slack tool IDs (optional but recommended)
+
+Granola and Slack MCP tools use instance-specific IDs that are unique to each Claude setup. The command works without them — Claude will just ask for permission on first use each session. If you want to skip that prompt, add your IDs to the `allowed-tools` line in `~/.claude/commands/gen-ps-doc.md`:
+
+1. Run `/mcp` in Claude Code to see all connected tools
+2. Find your Granola tools: `query_granola_meetings`, `list_meetings`, `get_meetings`
+3. Find your Slack tools: `slack_search_public_and_private`, `slack_read_user_profile`
+4. Note the full tool name including the UUID prefix (e.g. `mcp__b64aba26-xxxx__query_granola_meetings`)
+5. Add them to the `allowed-tools` line in your local copy of the command
+
 ---
 
 ## Usage
