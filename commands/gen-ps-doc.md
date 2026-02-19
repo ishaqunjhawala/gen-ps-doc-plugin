@@ -44,14 +44,22 @@ Query:
 - **Extract from these meetings: any scoping answers discussed** — email setup, voice telephony, chat volumes, tech stack, use cases, handoff requirements, APIs, authentication, routing, IVR details, success criteria
 
 ### 2d — Gong Calls AND Email Exchanges (via Glean)
-Glean indexes all Gong activity — both call transcripts and email exchanges captured by Gong Engage. Search both:
+Glean indexes all Gong activity — both call transcripts and email exchanges captured by Gong Engage. **Every single result returned must be checked — no skipping, no sampling.**
 
-Search 1 (keyword search — calls and emails):
-> Use `mcp__glean__search` with query: `"[account name]"`, app filter: `"gong"`, limit: 10, sort by recency
-> This returns both call recordings and email threads — treat all results as valid sources
+**Search 1 — Raw keyword search (calls and emails):**
+> Use `mcp__glean__search` with query: `"[account name]"`, app filter: `"gong"`, limit: 50, sort by recency
+> This returns both call recordings and email threads.
+> **EXHAUSTIVE RULE: Every result returned must be individually read and mined. If 10 calls are returned, all 10 are checked. If 30 are returned, all 30 are checked. Never stop at the first few results.**
+> For each result, note its title, date, and type (call transcript vs email exchange), then extract any scoping data it contains.
 
-Search 2 (semantic search for scoping details — calls and emails):
-> Use `mcp__glean__chat` with message: "From all Gong activity with [account name] — including call transcripts AND email exchanges — extract ALL of the following scoping details: (1) Chat: monthly chat volume, current chat platform, chatbot/agent handoff setup, APIs needed, segmentation requirements; (2) Email: email system/platform, which email addresses customers contact, webform presence, email routing, AI agent email address, gradual rollout requirements, email use cases, ticketing/routing for email; (3) Voice: telephony provider, CCaaS platform, SIP integration type, current IVR setup, inbound vs outbound, call volume, agent count, missed call rate, voice use cases, DTMF requirements, SMS capabilities, handoff to human agents, routing requirements; (4) General: pain points, business drivers, tech stack, key contacts, objections, sentiment, next steps, commitments made, Gong call/email URLs."
+**Search 2 — Semantic extraction (calls and emails):**
+> Use `mcp__glean__chat` with message: "From ALL Gong activity with [account name] — including every call transcript AND every email exchange — extract ALL of the following scoping details. Do not summarise across calls — give me specifics from each call and email separately: (1) Chat: monthly chat volume, current chat platform, chatbot/agent handoff setup, APIs needed, segmentation requirements; (2) Email: email system/platform, which email addresses customers contact, webform presence, email routing, AI agent email address, gradual rollout requirements, email use cases, ticketing/routing for email; (3) Voice: telephony provider, CCaaS platform, SIP integration type, current IVR setup, inbound vs outbound, call volume, agent count, missed call rate, voice use cases, DTMF requirements, SMS capabilities, handoff to human agents, routing requirements; (4) General: pain points, business drivers, tech stack, key contacts, objections, sentiment, next steps, commitments made, Gong call/email URLs. List the source (call title + date, or email subject + date) for each fact."
+
+**After both searches, reconcile all results:**
+- Build a complete list of every Gong call and email thread found (title + date + type)
+- For each one, record what scoping data it contributed — even if it only confirmed something already known
+- If a call or email thread yielded nothing useful, note it explicitly as "no new scoping data" — do NOT silently skip it
+- Contradictions between calls (e.g. different volume numbers) must be flagged, not silently resolved — note both values and which call each came from
 
 From the Gong results extract ALL of:
 - **Chat scoping**: volumes, current platform, handoff setup, APIs, segmentation
@@ -374,19 +382,20 @@ After the Google Doc link, output the following audit block:
 - ❌ [Any fields not found]
 
 ### ✅ Gong Call Transcripts (via Glean)
-- Calls found: [N] (list call titles + dates)
-- [Fields populated from calls: e.g. "Voice telephony provider — found in [Call Title]", "Monthly call volume — found in [Call Title]", "IVR setup — found"]
-- ❌ [Fields not found in calls — e.g. "Email routing — not mentioned in any call"]
+- Calls found: [N] — ALL [N] were checked (list every call: title + date)
+- For each call, one line: "[Call Title] ([Date]) — [what it contributed, or 'no new scoping data']"
+- ❌ [Fields not found in any call — e.g. "Email routing — not mentioned in any call"]
+- ⚠️ [Any contradictions between calls — e.g. "Call volume: 10k/mo in Jan call vs 15k/mo in Feb call — used Feb as more recent"]
 
 ### ✅ Gong Email Exchanges (via Glean)
-- Email threads found: [N] (list subject lines or describe threads)
-- [Fields populated from email exchanges: e.g. "Go-live date commitment — found in email thread", "Preferred rollout approach — found"]
+- Email threads found: [N] — ALL [N] were checked (list every thread: subject + date)
+- For each thread, one line: "[Subject] ([Date]) — [what it contributed, or 'no new scoping data']"
 - ❌ Not found / No email exchanges indexed — [if nothing returned]
 
 ### ✅ Granola Meeting Notes
-- Meetings found: [N] (list meeting titles + dates)
-- [Fields populated from meetings: e.g. "Use cases — found in [Meeting Title]", "Handoff setup — found", "Next Steps — found"]
-- ❌ [Fields not found in meetings]
+- Meetings found: [N] — ALL [N] were checked (list every meeting: title + date)
+- For each meeting, one line: "[Meeting Title] ([Date]) — [what it contributed, or 'no new scoping data']"
+- ❌ [Fields not found in any meeting]
 
 ### ✅ Slack Profile
 - SC Name: [name found or "defaulted to SC"]
