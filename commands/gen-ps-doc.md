@@ -332,6 +332,58 @@ Construct the full document content as Markdown. Substitute ALL placeholders wit
 
 **Sentiment:** [value]
 **Recording:** [URL]
+
+---
+
+## 📋 DATA SOURCES AUDIT
+
+*Auto-generated — every source checked on [Today's date]*
+
+### Salesforce (via Glean)
+- [SFDC Opp URL — found / not found]
+- [ARR — found ($X) / not found]
+- [Close Date — found / not found]
+- [AE Name — found / not found]
+- [Channels — found (X) / not found]
+- [Stage — found / not found]
+
+### Account Context (via Glean)
+- [Company Overview — found / not found]
+- [HQ — found / not found]
+- [Timezone — found / not found]
+- [Tech Stack — found (X, Y, Z) / not found]
+- [Key Contacts — found (N contacts) / not found]
+- [Business Drivers — found / not found]
+- [Key Volumes — found / not found]
+
+### Gong Call Transcripts (via Glean)
+- Calls found: [N] — ALL [N] checked
+- [Call Title] ([Date]) — [what it contributed, or "no new scoping data"]
+- [Call Title] ([Date]) — [what it contributed, or "no new scoping data"]
+- *(repeat for every call)*
+- ❌ Fields not found in any call: [list or "none"]
+- ⚠️ Contradictions: [e.g. "Call volume: 10k/mo in Jan call vs 15k/mo in Feb call — used Feb as more recent" or "none"]
+
+### Gong Email Exchanges (via Glean)
+- Email threads found: [N] — ALL [N] checked
+- [Subject] ([Date]) — [what it contributed, or "no new scoping data"]
+- *(repeat for every thread)*
+- ❌ [Fields not found / "No email exchanges indexed" if none returned]
+
+### Granola Meeting Notes
+- Meetings found: [N] — ALL [N] checked
+- [Meeting Title] ([Date]) — [what it contributed, or "no new scoping data"]
+- *(repeat for every meeting)*
+- ❌ Fields not found in any meeting: [list or "none"]
+
+### Slack Profile
+- SC Name: [name found or "defaulted to SC"]
+
+### ⚠️ Fields Still TBD — Needs Manual Input
+- **General**: [field names, or "none"]
+- **Chat**: [field names, or "none"]
+- **Email**: [field names, or "none"]
+- **Voice**: [field names, or "none"]
 ```
 
 ---
@@ -364,51 +416,10 @@ Save the returned Google Doc URL.
 
 Tell the user:
 1. ✅ Google Doc URL (clickable link)
-2. **Data Sources Audit** — a structured breakdown of where each piece of data came from. This is mandatory every run so the SC can validate what was found and what wasn't.
+2. A one-line summary: how many Gong calls, email threads, and Granola meetings were found and checked (e.g. "Checked 6 Gong calls, 3 email threads, 4 Granola meetings")
+3. A short list of any fields still left as TBD that need manual input — so the SC knows exactly what to fill in before handing the doc to PS
 
-### Data Sources Audit format
-
-After the Google Doc link, output the following audit block:
-
-```
-## 📋 Data Sources Audit — [Account Name]
-
-### ✅ Salesforce (via Glean)
-- [List each field populated: e.g. "SFDC Opp URL — found", "ARR — found ($X)", "Close Date — found", "AE Name — found", "Channels — found (Chat + Voice)"]
-- ❌ [Any fields not found — e.g. "Stage — not found"]
-
-### ✅ Account Context (via Glean)
-- [List each field populated: e.g. "Company Overview — found", "HQ — found", "Timezone — found", "Tech Stack — found (Zendesk, Twilio)", "Key Contacts — found (X contacts)", "Business Drivers — found"]
-- ❌ [Any fields not found]
-
-### ✅ Gong Call Transcripts (via Glean)
-- Calls found: [N] — ALL [N] were checked (list every call: title + date)
-- For each call, one line: "[Call Title] ([Date]) — [what it contributed, or 'no new scoping data']"
-- ❌ [Fields not found in any call — e.g. "Email routing — not mentioned in any call"]
-- ⚠️ [Any contradictions between calls — e.g. "Call volume: 10k/mo in Jan call vs 15k/mo in Feb call — used Feb as more recent"]
-
-### ✅ Gong Email Exchanges (via Glean)
-- Email threads found: [N] — ALL [N] were checked (list every thread: subject + date)
-- For each thread, one line: "[Subject] ([Date]) — [what it contributed, or 'no new scoping data']"
-- ❌ Not found / No email exchanges indexed — [if nothing returned]
-
-### ✅ Granola Meeting Notes
-- Meetings found: [N] — ALL [N] were checked (list every meeting: title + date)
-- For each meeting, one line: "[Meeting Title] ([Date]) — [what it contributed, or 'no new scoping data']"
-- ❌ [Fields not found in any meeting]
-
-### ✅ Slack Profile
-- SC Name: [name found or "defaulted to SC"]
-
-### ⚠️ Fields Left as TBD
-List every field in the final doc that is still TBD, grouped by section:
-- **General**: [field names]
-- **Chat**: [field names]
-- **Email**: [field names]
-- **Voice**: [field names]
-```
-
-Keep the audit factual and specific — name the actual call title or meeting where a key fact was found. This helps the SC know exactly what to validate.
+The full Data Sources Audit is at the end of the Google Doc itself.
 
 ---
 
