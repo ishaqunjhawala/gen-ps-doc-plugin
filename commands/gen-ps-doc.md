@@ -355,8 +355,51 @@ Save the returned Google Doc URL.
 ## Step 6: Report Back to the User
 
 Tell the user:
-- ✅ Google Doc URL (clickable link)
-- Summary of what was auto-filled vs left as TBD — list which fields still need manual input
+1. ✅ Google Doc URL (clickable link)
+2. **Data Sources Audit** — a structured breakdown of where each piece of data came from. This is mandatory every run so the SC can validate what was found and what wasn't.
+
+### Data Sources Audit format
+
+After the Google Doc link, output the following audit block:
+
+```
+## 📋 Data Sources Audit — [Account Name]
+
+### ✅ Salesforce (via Glean)
+- [List each field populated: e.g. "SFDC Opp URL — found", "ARR — found ($X)", "Close Date — found", "AE Name — found", "Channels — found (Chat + Voice)"]
+- ❌ [Any fields not found — e.g. "Stage — not found"]
+
+### ✅ Account Context (via Glean)
+- [List each field populated: e.g. "Company Overview — found", "HQ — found", "Timezone — found", "Tech Stack — found (Zendesk, Twilio)", "Key Contacts — found (X contacts)", "Business Drivers — found"]
+- ❌ [Any fields not found]
+
+### ✅ Gong Call Transcripts (via Glean)
+- Calls found: [N] (list call titles + dates)
+- [Fields populated from calls: e.g. "Voice telephony provider — found in [Call Title]", "Monthly call volume — found in [Call Title]", "IVR setup — found"]
+- ❌ [Fields not found in calls — e.g. "Email routing — not mentioned in any call"]
+
+### ✅ Gong Email Exchanges (via Glean)
+- Email threads found: [N] (list subject lines or describe threads)
+- [Fields populated from email exchanges: e.g. "Go-live date commitment — found in email thread", "Preferred rollout approach — found"]
+- ❌ Not found / No email exchanges indexed — [if nothing returned]
+
+### ✅ Granola Meeting Notes
+- Meetings found: [N] (list meeting titles + dates)
+- [Fields populated from meetings: e.g. "Use cases — found in [Meeting Title]", "Handoff setup — found", "Next Steps — found"]
+- ❌ [Fields not found in meetings]
+
+### ✅ Slack Profile
+- SC Name: [name found or "defaulted to SC"]
+
+### ⚠️ Fields Left as TBD
+List every field in the final doc that is still TBD, grouped by section:
+- **General**: [field names]
+- **Chat**: [field names]
+- **Email**: [field names]
+- **Voice**: [field names]
+```
+
+Keep the audit factual and specific — name the actual call title or meeting where a key fact was found. This helps the SC know exactly what to validate.
 
 ---
 
