@@ -1,12 +1,12 @@
 ---
-description: Generate a Pre-Sales → PS Knowledge Transfer Google Doc for any account (fetches live data from Glean, Granola, Gong & Slack)
+description: Generate a Pre-Sales → PS Knowledge Transfer Google Doc for any account (fetches live data from Glean, Granola, Gong, Gmail & Slack)
 argument-hint: "<account name>"
 allowed-tools: Bash, Read, mcp__glean__chat, mcp__glean__search, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__query_granola_meetings, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__list_meetings, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__get_meetings, mcp__28d90b4b-0f1f-4d6d-96f3-e7a6107a9d3c__slack_search_public_and_private, mcp__28d90b4b-0f1f-4d6d-96f3-e7a6107a9d3c__slack_read_user_profile, mcp__ada__get_ada_metric, mcp__ada__get_ada_configuration
 ---
 
 # Generate PS Knowledge Transfer Doc
 
-Generate a Pre-Sales → PS Knowledge Transfer Google Doc by gathering live data from Glean (Salesforce + Gong), Granola (meeting notes), and Slack. The output is a Google Doc saved to the "PS Hand Over Docs" folder in Google Drive. No local files, no Notion page.
+Generate a Pre-Sales → PS Knowledge Transfer Google Doc by gathering live data from Glean (Salesforce + Gong + Gmail), Granola (meeting notes), and Slack. The output is a Google Doc saved to the "PS Hand Over Docs" folder in Google Drive. No local files, no Notion page.
 
 ## Arguments
 
@@ -28,7 +28,7 @@ Get the current user's name to fill the SC field in the doc:
 
 ---
 
-## Step 2: Gather Account Data (run all in parallel)
+## Step 2: Gather Account Data (run all in parallel where possible)
 
 ### 2a — Salesforce Opportunity (via Glean)
 Query:
@@ -68,7 +68,27 @@ From the Gong results extract ALL of:
 - **General**: pain points, tech stack, volumes, objections, sentiment, next steps, commitments made, Gong call/email URLs
 - **Note**: Gong email exchanges often contain explicit scoping answers, pricing discussions, and commitments that don't appear in call transcripts — treat them as equally important
 
-### 2e — Ada Bot (skip if no bot mentioned)
+### 2e — Gmail (via Glean)
+Glean indexes Gmail, so direct emails between the AE/SC team and the prospect are searchable. These often contain explicit commitments, scoping clarifications, and go-live timelines that didn't make it into Gong or Granola.
+
+**EXHAUSTIVE RULE: Every email thread returned must be individually read — no skipping.**
+
+**Search 1 — Incoming emails from the account domain:**
+> Use `mcp__glean__search` with query: `"[account name]"`, app filter: `"gmail"`, limit: 50, sort by recency
+> For each result, note the subject, sender, date, and any scoping data it contains.
+
+**Search 2 — Semantic extraction from Gmail:**
+> Use `mcp__glean__chat` with message: "From all Gmail emails related to [account name] — including emails from the prospect's domain and emails the Ada team sent to them — extract ALL of the following: (1) explicit scoping answers or commitments the prospect gave in writing; (2) go-live dates or launch timelines mentioned; (3) pricing or commercial discussions; (4) technical requirements (APIs, integrations, platforms); (5) any concerns, blockers, or risks mentioned; (6) email addresses of prospect contacts. List the source (email subject + date + sender) for each fact."
+
+**After both searches, reconcile all results:**
+- Build a complete list of every Gmail thread found (subject + date + sender)
+- For each one, record what scoping data it contributed — even if it only confirmed something already known
+- If a thread yielded nothing useful, note it explicitly as "no new scoping data" — do NOT silently skip it
+- Contradictions with other sources must be flagged — note both values and their sources
+
+**Note**: Gmail often contains the most direct and unambiguous scoping data — prospects frequently give written answers in email that are more precise than what's discussed verbally on calls.
+
+### 2f — Ada Bot (skip if no bot mentioned)
 - If Glean context mentions an Ada bot or demo instance for this account:
   - Call `get_ada_configuration` — playbooks, actions, custom instructions
   - Call `get_ada_metric` for `resolution_rate` and `csat_rate` (last 7 days)
@@ -370,6 +390,12 @@ Construct the full document content as Markdown. Substitute ALL placeholders wit
 - *(repeat for every thread)*
 - ❌ [Fields not found / "No email exchanges indexed" if none returned]
 
+### Gmail (via Glean)
+- Threads found: [N] — ALL [N] checked
+- [Subject] ([Date], from [Sender]) — [what it contributed, or "no new scoping data"]
+- *(repeat for every thread)*
+- ❌ [Fields not found / "No Gmail threads indexed" if none returned]
+
 ### Granola Meeting Notes
 - Meetings found: [N] — ALL [N] checked
 - [Meeting Title] ([Date]) — [what it contributed, or "no new scoping data"]
@@ -416,7 +442,7 @@ Save the returned Google Doc URL.
 
 Tell the user:
 1. ✅ Google Doc URL (clickable link)
-2. A one-line summary: how many Gong calls, email threads, and Granola meetings were found and checked (e.g. "Checked 6 Gong calls, 3 email threads, 4 Granola meetings")
+2. A one-line summary: how many Gong calls, Gong email threads, Gmail threads, and Granola meetings were found and checked (e.g. "Checked 6 Gong calls, 3 Gong email threads, 5 Gmail threads, 4 Granola meetings")
 3. A short list of any fields still left as TBD that need manual input — so the SC knows exactly what to fill in before handing the doc to PS
 
 The full Data Sources Audit is at the end of the Google Doc itself.
@@ -435,3 +461,4 @@ The full Data Sources Audit is at the end of the Google Doc itself.
 - **Never hallucinate** account details — TBD is always better than a wrong answer.
 - **Gong via Glean** — there is no standalone Gong MCP; use `mcp__glean__search` with `app: "gong"` and `mcp__glean__chat` to search indexed Gong transcripts. If Glean doesn't return Gong results, note it as TBD — don't skip the attempt.
 - **Gong data enriches scoping fields directly** — extract telephony provider, email system, chat platform, volumes, IVR setup, use cases, handoff process from Gong transcripts and put them into the correct scoping table cells.
+- **Gmail via Glean** — use `mcp__glean__search` with `app: "gmail"` to search indexed Gmail threads. Gmail often contains the most explicit written scoping answers — treat it as equally important as Gong. If Glean doesn't return Gmail results, note it as TBD — don't skip the attempt.
