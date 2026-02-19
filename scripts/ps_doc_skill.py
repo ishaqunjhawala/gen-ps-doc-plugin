@@ -119,6 +119,33 @@ def _data_row(table, field: str, value: str) -> None:
     r1.font.name = "Arial"
 
 
+def _out_of_scope_notice(doc: Document, channel: str, notes: str = "") -> None:
+    """
+    Render an out-of-scope notice above a scoping table.
+
+    Adds:
+      1. A short blurb paragraph with any discussion notes captured during sales.
+      2. A bold callout: "⚠ [Channel] is not included in the scope of this project."
+    """
+    if notes:
+        p = doc.add_paragraph()
+        run = p.add_run(notes)
+        run.font.size = Pt(10)
+        run.font.name = "Arial"
+        run.font.color.rgb = GREY_RGB
+
+    callout = doc.add_paragraph()
+    callout_run = callout.add_run(
+        f"\u26a0\ufe0f  {channel} channel is not included in the scope of this project. "
+        "The table below is preserved for future reference — fields are left as TBD."
+    )
+    callout_run.bold = True
+    callout_run.font.size = Pt(10)
+    callout_run.font.name = "Arial"
+    callout_run.font.color.rgb = NAVY_RGB
+    doc.add_paragraph("")
+
+
 # ── Data helpers ──────────────────────────────────────────────────────────────
 
 def _get(d: dict, *keys, default: str = "TBD") -> str:
@@ -360,6 +387,10 @@ def generate_ps_doc(
             r.font.color.rgb = NAVY_RGB
         doc.add_paragraph("")
 
+        email_scope = data.get("email_scoping", {})
+        if email_scope.get("out_of_scope"):
+            _out_of_scope_notice(doc, "Email", email_scope.get("notes", ""))
+
         t2 = _make_table(doc)
         arch = acct.get("key_architecture", {})
 
@@ -393,6 +424,10 @@ def generate_ps_doc(
         h = doc.add_heading("VOICE SCOPING", level=1)
         for r in h.runs:
             r.font.color.rgb = NAVY_RGB
+
+        voice_scope = data.get("voice_scoping", {})
+        if voice_scope.get("out_of_scope"):
+            _out_of_scope_notice(doc, "Voice", voice_scope.get("notes", ""))
 
         t3 = _make_table(doc)
         arch     = acct.get("key_architecture", {})
