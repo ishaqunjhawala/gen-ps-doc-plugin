@@ -43,20 +43,22 @@ Query:
 - Then call `get_meetings` for the 5 most recent account-related meetings to get full details
 - **Extract from these meetings: any scoping answers discussed** — email setup, voice telephony, chat volumes, tech stack, use cases, handoff requirements, APIs, authentication, routing, IVR details, success criteria
 
-### 2d — Gong Call Transcripts (via Glean)
-Glean indexes Gong calls — search for the most recent calls with this account:
+### 2d — Gong Calls AND Email Exchanges (via Glean)
+Glean indexes all Gong activity — both call transcripts and email exchanges captured by Gong Engage. Search both:
 
-Search 1 (keyword search for recent calls):
-> Use `mcp__glean__search` with query: `"[account name]"`, app filter: `"gong"`, limit: 5, sort by recency
+Search 1 (keyword search — calls and emails):
+> Use `mcp__glean__search` with query: `"[account name]"`, app filter: `"gong"`, limit: 10, sort by recency
+> This returns both call recordings and email threads — treat all results as valid sources
 
-Search 2 (semantic search for scoping details):
-> Use `mcp__glean__chat` with message: "From Gong calls with [account name], extract ALL of the following scoping details: (1) Chat: monthly chat volume, current chat platform, chatbot/agent handoff setup, APIs needed, segmentation requirements; (2) Email: email system/platform, which email addresses customers contact, webform presence, email routing, AI agent email address, gradual rollout requirements, email use cases, ticketing/routing for email; (3) Voice: telephony provider, CCaaS platform, SIP integration type, current IVR setup, inbound vs outbound, call volume, agent count, missed call rate, voice use cases, DTMF requirements, SMS capabilities, handoff to human agents, routing requirements; (4) General: pain points, business drivers, tech stack, key contacts, objections, sentiment, next steps, Gong call URLs."
+Search 2 (semantic search for scoping details — calls and emails):
+> Use `mcp__glean__chat` with message: "From all Gong activity with [account name] — including call transcripts AND email exchanges — extract ALL of the following scoping details: (1) Chat: monthly chat volume, current chat platform, chatbot/agent handoff setup, APIs needed, segmentation requirements; (2) Email: email system/platform, which email addresses customers contact, webform presence, email routing, AI agent email address, gradual rollout requirements, email use cases, ticketing/routing for email; (3) Voice: telephony provider, CCaaS platform, SIP integration type, current IVR setup, inbound vs outbound, call volume, agent count, missed call rate, voice use cases, DTMF requirements, SMS capabilities, handoff to human agents, routing requirements; (4) General: pain points, business drivers, tech stack, key contacts, objections, sentiment, next steps, commitments made, Gong call/email URLs."
 
 From the Gong results extract ALL of:
 - **Chat scoping**: volumes, current platform, handoff setup, APIs, segmentation
 - **Email scoping**: email system, routing, webform, AI agent email, use cases, rollout plan
 - **Voice scoping**: telephony provider (Genesys? Avaya? Five9? Twilio?), CCaaS, IVR, call volumes, agent count, use cases, DTMF, SMS, routing, handoff
-- **General**: pain points, tech stack, volumes, objections, sentiment, next steps, Gong call URLs
+- **General**: pain points, tech stack, volumes, objections, sentiment, next steps, commitments made, Gong call/email URLs
+- **Note**: Gong email exchanges often contain explicit scoping answers, pricing discussions, and commitments that don't appear in call transcripts — treat them as equally important
 
 ### 2e — Ada Bot (skip if no bot mentioned)
 - If Glean context mentions an Ada bot or demo instance for this account:
