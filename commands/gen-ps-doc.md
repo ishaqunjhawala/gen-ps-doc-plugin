@@ -1,12 +1,12 @@
 ---
-description: Generate a Pre-Sales → PS Knowledge Transfer .docx for any account (fetches live data from Glean, Granola, Gong & Slack)
+description: Generate a Pre-Sales → PS Knowledge Transfer Google Doc for any account (fetches live data from Glean, Granola, Gong & Slack)
 argument-hint: "<account name>"
-allowed-tools: Bash, Read, mcp__glean__chat, mcp__glean__search, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__query_granola_meetings, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__list_meetings, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__get_meetings, mcp__28d90b4b-0f1f-4d6d-96f3-e7a6107a9d3c__slack_search_public_and_private, mcp__28d90b4b-0f1f-4d6d-96f3-e7a6107a9d3c__slack_read_user_profile, mcp__ada__get_ada_metric, mcp__ada__get_ada_configuration, mcp__729d2fa9-4409-4a97-838a-8eb8d2b766cf__notion-create-pages, mcp__729d2fa9-4409-4a97-838a-8eb8d2b766cf__notion-search
+allowed-tools: Bash, Read, mcp__glean__chat, mcp__glean__search, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__query_granola_meetings, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__list_meetings, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__get_meetings, mcp__28d90b4b-0f1f-4d6d-96f3-e7a6107a9d3c__slack_search_public_and_private, mcp__28d90b4b-0f1f-4d6d-96f3-e7a6107a9d3c__slack_read_user_profile, mcp__ada__get_ada_metric, mcp__ada__get_ada_configuration
 ---
 
 # Generate PS Knowledge Transfer Doc
 
-Generate a formatted Pre-Sales → PS Knowledge Transfer `.docx` by gathering live data from Glean (Salesforce + Gong), Granola (meeting notes), and Slack. No cache or config file needed.
+Generate a Pre-Sales → PS Knowledge Transfer Google Doc by gathering live data from Glean (Salesforce + Gong), Granola (meeting notes), and Slack. The output is a Google Doc saved to the "PS Hand Over Docs" folder in Google Drive. No local files, no Notion page.
 
 ## Arguments
 
@@ -15,7 +15,7 @@ The user invoked this command with: $ARGUMENTS
 Parse the arguments:
 - **Account name** (required) — first argument, e.g. `"Grow Therapy"`. If not provided, ask the user.
 
-**ALL THREE SCOPING SECTIONS (General, Chat, Email, Voice) ARE ALWAYS GENERATED — every KT doc always includes all sections. For channels that are out of scope for Phase 1, include a brief blurb about what was discussed with the customer, mark the channel as "not included in this project", and preserve the table structure with TBD values for future use.**
+**ALL SCOPING SECTIONS (General, Chat, Email, Voice) ARE ALWAYS GENERATED — every KT doc includes all sections. For channels out of scope for Phase 1, include a brief blurb about what was discussed, mark the channel as "not included in this project", and preserve the table structure with TBD values for future use.**
 
 ---
 
@@ -67,17 +67,13 @@ From the Gong results extract ALL of:
 
 ## Step 3: Synthesize Scoping Answers
 
-**CRITICAL: Before building the data dictionary, do a full synthesis pass over ALL gathered data (Salesforce, Glean context, Granola meetings, Gong calls) to extract every scoping answer possible. The goal is to populate as many fields as possible with REAL data — TBD is a last resort, not a default.**
+**CRITICAL: Before building the document, do a full synthesis pass over ALL gathered data (Salesforce, Glean context, Granola meetings, Gong calls) to extract every scoping answer possible. The goal is to populate as many fields as possible with REAL data — TBD is a last resort, not a default.**
 
 ### Out-of-Scope Channel Detection
-
-Before synthesizing per-channel details, check the Salesforce `product_channels` field and any Phase 1 scoping discussions to determine which channels are in scope:
-
-- If **Email is not in the `product_channels`** for Phase 1 (e.g. the opp shows "Chat" only, or email is noted as a future phase): set `email_scoping.out_of_scope = True` and populate `email_scoping.notes` with a brief summary of what was discussed (when they want to add email, any platform/routing details mentioned, future phase timeline).
-- If **Voice is not in the `product_channels`** for Phase 1 (e.g. the opp shows "Chat" or "Chat; Email" only, or voice is noted as a future phase): set `voice_scoping.out_of_scope = True` and populate `voice_scoping.notes` with a brief summary of what was discussed (when they want to add voice, telephony details discussed, future phase timeline).
-- If a channel is in scope, set `out_of_scope = False` (or omit the key) and fill the table normally.
-
-For each scoping section, actively answer these questions from the data:
+Check the Salesforce `product_channels` field and Phase 1 scoping discussions:
+- If **Email is not in Phase 1 scope**: note `email_out_of_scope = True` and capture a brief summary of what was discussed (timing, platform, future phase plans)
+- If **Voice is not in Phase 1 scope**: note `voice_out_of_scope = True` and capture a brief summary of what was discussed (telephony details, timeline, future phase plans)
+- If a channel IS in scope: fill every table cell from data
 
 ### Chat Scoping Synthesis
 - What platform do they currently use for chat? (from tech stack / Gong)
@@ -115,196 +111,16 @@ For each scoping section, actively answer these questions from the data:
 
 ---
 
-## Step 4: Assemble the Data Dictionary
+## Step 4: Build the Google Doc Content
 
-From all gathered and synthesized data, build this Python dict. Use `"TBD"` ONLY when a field was genuinely not found anywhere in the data — never guess or hallucinate.
+**CRITICAL: This is a structured scoping form — NOT a narrative brief. Use the exact table structure below. Every table cell must be filled with REAL data extracted from Gong, Granola, and Glean. TBD is only for fields where no data was found anywhere. The Chat, Email, and Voice scoping tables are the most important part of this document.**
 
-```python
-data = {
-    "account": {
-        "company": "<company name>",
-        "hq": "<city, country>",
-        "platform": "<industry / what they do>",
-        "timezone": "<e.g. EST, PST>",
-        "contacts": {
-            "<Contact Name>": "<Role>",
-        },
-        "current_stack": "<CRM, ticketing, CCaaS — comma separated>",
-        "primary_use_case": "<Phase 1 use case>",
-        "secondary_use_cases": ["<Phase 2>", "<Phase 3>"],
-        "business_drivers": ["<driver 1>", "<driver 2>"],
-        "risks": ["<risk 1>", "<risk 2>"],
-        "key_architecture": {
-            "crm": "<e.g. Salesforce>",
-            "ticketing": "<e.g. Zendesk>",
-            "chat_platform": "<e.g. Intercom, Zendesk Chat>",
-            "telephony": "<e.g. Genesys Cloud, Avaya, Five9, Twilio>",
-            "ccaas": "<e.g. Genesys, Nice inContact>",
-            "email_platform": "<e.g. Zendesk, Salesforce Service Cloud>",
-        },
-        "key_volumes": {
-            "chat_monthly": "<number or range>",
-            "email_monthly": "<number or range>",
-            "call_monthly": "<number or range>",
-            "agents": "<number>",
-        },
-        "next_steps": ["<step 1>", "<step 2>"],
-        "salesforce_url": "<SFDC URL>",
-        "demo_recap": {
-            "date": "<YYYY-MM-DD>",
-            "feedback": "<key feedback from demo>",
-            "gong_call_url": "<Gong URL if found>",
-        },
-    },
-    "opportunity": {
-        "sf_url": "<SFDC URL>",
-        "close_date": "<YYYY-MM-DD>",
-        "product_channels": "<Chat / Chat; Email / Chat; Email; Voice>",
-        "arr": "<number>",
-        "stage": "<stage name>",
-    },
-    "chat_scoping": {
-        "current_platform": "<what they use for chat today>",
-        "monthly_volume": "<monthly chat conversations>",
-        "handoff_setup": "<how chat hands off to human agents today>",
-        "apis_needed": "<list of APIs/integrations needed for chat>",
-        "segmentation": "<any segmentation rules>",
-        "unique_use_cases": "<use cases unique to chat>",
-        "kb_readiness": "<is KB formatted for AI ingestion or needs work>",
-        "languages": "<languages required>",
-        "authentication": "<any auth requirements for chat>",
-    },
-    "email_scoping": {
-        # Set out_of_scope: true when email is NOT in the Phase 1 project scope.
-        # notes: brief summary of what was discussed about email during sales conversations.
-        # All other fields can be left as TBD when out_of_scope is true.
-        "out_of_scope": False,  # True when email channel is not in scope for this project
-        "notes": "<summary of what was discussed about email with the customer — timing, interest level, future phases, any requirements mentioned>",
-        "email_system": "<what email platform/system they use>",
-        "customer_email_addresses": "<which addresses customers email>",
-        "webform": "<do they have a webform? describe it>",
-        "email_routing": "<how email is currently routed/triaged>",
-        "ai_agent_email": "<what address the AI agent will respond as>",
-        "gradual_rollout": "<do they need phased rollout? yes/no/TBD>",
-        "unique_use_cases": "<use cases unique to email vs chat>",
-        "ticketing_handoff": "<how email hands off to ticketing>",
-        "routing_requirements": "<any routing rules>",
-        "authentication": "<any auth requirements for email>",
-        "cc_support": "<do they need CC on emails?>",
-        "metadata": "<any metadata requirements>",
-        "kb_additional": "<additional KB sources specific to email>",
-    },
-    "voice_scoping": {
-        # Set out_of_scope: true when voice is NOT in the Phase 1 project scope.
-        # notes: brief summary of what was discussed about voice during sales conversations.
-        # All other fields can be left as TBD when out_of_scope is true.
-        "out_of_scope": False,  # True when voice channel is not in scope for this project
-        "notes": "<summary of what was discussed about voice with the customer — timeline, use case interest, any requirements or concerns mentioned>",
-        "telephony_provider": "<e.g. Genesys Cloud, Avaya, Five9, Twilio, Vonage>",
-        "ccaas_platform": "<e.g. Genesys Cloud, Nice inContact, Talkdesk>",
-        "sip_integration_type": "<SIP trunk type / integration method>",
-        "current_ivr": "<describe current IVR setup and menu options>",
-        "inbound_outbound": "<inbound / outbound / both>",
-        "call_volume": "<monthly or daily call volume>",
-        "agent_count": "<number of human agents on voice>",
-        "missed_call_rate": "<% or description>",
-        "primary_use_case": "<main reason customers call>",
-        "call_categorization": "<how calls are currently categorized/triaged>",
-        "secondary_use_cases": ["<use case 2>", "<use case 3>"],
-        "apis_required": "<APIs needed for voice>",
-        "dtmf_required": "<yes/no — do they need dial pad input>",
-        "sms_capabilities": "<yes/no — SMS needed>",
-        "cross_channel": "<any cross-channel interoperability needs>",
-        "handoff_to_human": "<how voice hands off to human agents>",
-        "routing_requirements": "<any call routing rules>",
-        "voice_quality_feedback": "<feedback from voice demo>",
-        "success_criteria": "<what does success look like for voice>",
-        "voice_risks": "<voice-specific risks>",
-    },
-    "granola_notes": [
-        {"title": "<meeting title>", "date": "<YYYY-MM-DD>", "summary": "<key points>"},
-    ],
-    "gong_calls": [
-        {
-            "date": "<YYYY-MM-DD>",
-            "title": "<call title>",
-            "url": "<Gong call URL>",
-            "pain_points": ["<pain point 1>", "<pain point 2>"],
-            "use_cases_mentioned": ["<use case 1>"],
-            "objections": ["<objection 1>"],
-            "tech_mentions": ["<tool or system mentioned>"],
-            "volume_data": "<any volume/scale info mentioned>",
-            "sentiment": "<positive / mixed / negative>",
-            "next_steps": ["<agreed next step>"],
-        }
-    ],
-    "sc_name": "<SC full name>",
-}
-```
-
----
-
-## Step 5: Check python-docx and Run the Generator
-
-### 5a — Ensure python-docx is installed
-```bash
-python3 -c "import docx" 2>/dev/null || pip install python-docx
-```
-
-### 5b — Write the data to a temp JSON file and run the script
-```bash
-python3 -c "
-import json
-data = <PASTE DATA DICT HERE AS PYTHON LITERAL>
-with open('/tmp/ps_doc_data.json', 'w') as f:
-    json.dump(data, f)
-"
-
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ps_doc_skill.py" \
-  --account "<account name>" \
-  --sections general email voice \
-  --sc-name "<SC name>" \
-  --output-dir "./ps-knowledge-transfer" \
-  --data-file "/tmp/ps_doc_data.json"
-```
-
-The script prints `SUCCESS: <filepath>` on completion.
-
-### 5c — Copy path to clipboard (macOS)
-```bash
-echo "<filepath>" | pbcopy
-```
-
----
-
-## Step 6: Publish to Notion
-
-**This step is MANDATORY — always run it, every time. Do NOT skip it or ask the user if they want it. A Notion page is always created alongside the .docx.**
-
-### 6a — Parent page
-The canonical Notion template lives at:
-- **Template page ID**: `30b6162e53cd80f8b9d1c151f5eebf08`
-- **Template URL**: https://www.notion.so/adasupport/MAKE-A-COPY-Pre-Sales-PS-Knowledge-Transfer-TEMPLATE-30b6162e53cd80f8b9d1c151f5eebf08
-
-Search Notion for an existing parent/folder page to house the generated doc:
-```
-notion-search query: "PS Knowledge Transfer handoff"
-```
-- If a clear parent page is found (e.g. a "PS Handoffs" index page), use its page ID as parent.
-- If not found, create the page at workspace level (no parent) — **do NOT use the template page itself as parent**.
-
-### 6b — Build the Notion page content
-
-**CRITICAL: The Notion page must use the EXACT same field names and section structure as the official Ada PS KT template (link above). Do NOT invent new section names or write in a narrative format. This is a structured scoping form. Copy field names character-for-character. ALL THREE SCOPING SECTIONS MUST BE PRESENT AND POPULATED.**
-
-**CRITICAL: Every table cell must be filled with REAL data extracted from Gong, Granola, and Glean. Do NOT default to TBD — only use TBD for fields where no data was found anywhere. The chat, email, and voice scoping tables are the most important part of this document.**
-
-Use Notion-flavored Markdown to construct the page:
+Construct the full document content as Markdown. Substitute ALL placeholders with real data before creating the doc.
 
 ```markdown
 # Sales to Professional Services Handoff — [Account Name]
 
-**Generated:** [Date] | **SC:** [SC Name]
+**Generated:** [Today's date] | **SC:** [SC Name]
 
 ---
 
@@ -312,47 +128,44 @@ Use Notion-flavored Markdown to construct the page:
 
 | Field | SC Input |
 |---|---|
-| **Client Overview** *(Overview of Account + Business case with Ada)* | [company overview + HQ + industry + key business drivers from Gong/Granola] |
+| **Client Overview** *(Overview of Account + Business case with Ada)* | [company overview + HQ + industry + key business drivers] |
 | **SFDC Opp** | [Salesforce URL] |
 | **Solution Survey** | [link or TBD] |
-| **Key client stakeholders & Roles** | [Name — Role, one per line, from Gong/Granola/Glean] |
-| **Timezone** | [timezone from account data] |
-| **Channels currently supported** | [chat: X/mo, email: X/mo, voice: X/mo — from volumes data] |
-| **Agent Tech Stack** | [CRM + ticketing + CCaaS + chat platform — from tech stack data] |
-| **KB Readiness** *(Formatted and ready for AI agent ingestion or updates required for AI ingestion)* | [assessment from Gong/Granola discussions or TBD] |
+| **Key client stakeholders & Roles** | [Name — Role (one per line)] |
+| **Timezone** | [timezone] |
+| **Channels currently supported** | [chat: X/mo, email: X/mo, voice: X calls/mo] |
+| **Agent Tech Stack** | [CRM, ticketing, CCaaS, chat platform] |
+| **KB Readiness** *(Formatted and ready for AI agent ingestion or updates required for AI ingestion)* | [assessment from discussions or TBD] |
 | **Project Scope** *(What will Phase 1 include? Phase 2? Phase 3?)* | Phase 1: [primary use case] / Phase 2: [secondary] / Phase 3: [tertiary] |
 | **Expected Launch Date?** | [close date from SFDC] |
-| **Success Criteria 30 days post launch** | [from Gong/Granola success criteria discussions or TBD] |
-| **Channels** *(What channels will they plan to deploy on?)* | [Chat / Email / Voice — based on opp and discussions] |
-| **Language Requirements** | [from Gong/Granola language discussions, default English if not mentioned] |
-| **APIs / Personalization / Authentication Requirements** | [from Gong/Granola API/auth discussions] |
-| **Segmentation Requirements** | [from Gong/Granola segmentation discussions or TBD] |
-| **Product promises made to the client / FRs?** | [from Gong/Granola promises or TBD] |
-| **Cluster** | [US / US2 / Maple / EU — from region data, default Maple] |
-| **Number of Ai Agents** | [from Gong/Granola or TBD] |
+| **Success Criteria 30 days post launch** | [from discussions or TBD] |
+| **Channels** *(What channels will they plan to deploy on?)* | [Chat / Email / Voice] |
+| **Language Requirements** | [languages, default English if not mentioned] |
+| **APIs / Personalization / Authentication Requirements** | [from API/auth discussions] |
+| **Segmentation Requirements** | [from discussions or TBD] |
+| **Product promises made to the client / FRs?** | [from discussions or TBD] |
+| **Cluster** | [US / US2 / Maple / EU — default Maple] |
+| **Number of Ai Agents** | [from discussions or TBD] |
 
 ### Miscellaneous
 
 | Field | SC Input |
 |---|---|
 | **Enrolled in Ada Academy** | No (pre-signature) |
-| **Security Requirements** | [from Gong/Granola security discussions or TBD] |
+| **Security Requirements** | [from discussions or TBD] |
 | **Link + invites to Demo/Sandbox instance** | [Gong call URL or TBD] |
 | **Pilot / Opt out** | TBD |
 | **Additional Notes / Risks** | [risks from data] |
 
 ## KEY NEXT STEPS
 
-*From Platform Demo — [demo date from Gong/Granola]*
+*From Platform Demo — [demo date]*
 
-[List every next step found in Gong calls and Granola meeting notes]
-
-1. [next step 1]
-2. [next step 2]
+[List every next step found in Gong calls and Granola meeting notes, numbered]
 
 ## MEETING NOTES (from Granola)
 
-[For each of the last 5 meetings found:]
+[For each of the last 5 meetings:]
 **[Meeting Title]** ([Date])
 [Summary of key points discussed]
 
@@ -362,124 +175,118 @@ Use Notion-flavored Markdown to construct the page:
 
 | Field | SC Input |
 |---|---|
-| **Current Chat Platform** *(What platform do they use for chat today?)* | [from tech stack / Gong — e.g. Intercom, Zendesk Chat, Salesforce Chat] |
+| **Current Chat Platform** *(What platform do they use for chat today?)* | [e.g. Intercom, Zendesk Chat, Salesforce Chat — from tech stack / Gong] |
 | **Monthly Chat Volume** | [from volumes data / Gong] |
-| **Current Handoff Setup** *(How does chat currently hand off to human agents?)* | [from Gong/Granola — describe current process] |
+| **Current Handoff Setup** *(How does chat currently hand off to human agents?)* | [describe current process from Gong/Granola] |
 | **APIs / Integrations Required** | [from Gong/Granola API discussions] |
-| **Segmentation Requirements** | [from Gong/Granola segmentation discussions or TBD] |
+| **Segmentation Requirements** | [from discussions or TBD] |
 | **Chat-Specific Use Cases** *(Any use cases unique to chat?)* | [from use cases discussions] |
 | **KB Readiness for Chat** | [assessment from discussions or TBD] |
-| **Language Requirements** | [languages for chat — from discussions] |
-| **Authentication Requirements** | [from Gong/Granola auth discussions or TBD] |
+| **Language Requirements** | [languages for chat] |
+| **Authentication Requirements** | [from auth discussions or TBD] |
 
 ---
 
 ## EMAIL SCOPING
 
-<!-- IF email_scoping.out_of_scope is true, render the following block instead of filling in the table: -->
-<!-- OUT OF SCOPE BLOCK (use when email is not in Phase 1 scope):
-[email_scoping.notes — paste the summary of email discussions with the customer here]
+[IF email is OUT OF SCOPE: insert this block]
+[email notes summary — what was discussed about email during sales conversations]
 
 > ⚠️ **Email channel is not included in the scope of this project.** The table below is preserved for future reference — fields are left as TBD.
--->
 
-<!-- IF email is IN scope, fill the table cells from Gong/Granola/Glean data. -->
-<!-- IF email is OUT OF SCOPE, leave all table cells as TBD. -->
+[IF email IS IN SCOPE: fill all table cells from Gong/Granola/Glean data]
 
 ### Email Architecture
 
 | Field | SC Input |
 |---|---|
-| **Tech Stack** *(Is the system your agents use to receive and respond to emails the same as your chat?)* | [TBD if out of scope — otherwise from tech stack — is it same as chat platform or different?] |
-| **Email landscape** *(Which email address(es) are your customers emailing?)* | [TBD if out of scope — otherwise from Gong/Granola — list email addresses] |
-| **Webform** *(Do you have a webform or contact form on your website?)* | [TBD if out of scope — otherwise from Gong/Granola discussions — yes/no and describe] |
-| **Custom / Filter Incoming Emails** | [TBD if out of scope — otherwise from Gong/Granola — how they triage/filter incoming email] |
-| **AI Agent / Human support** *(Which email address will the AI Agent respond as?)* | [TBD if out of scope — otherwise from Gong/Granola scoping discussions] |
-| **Launch plan** *(Do you require a gradual rollout?)* | [TBD if out of scope — otherwise from Gong/Granola rollout discussions] |
+| **Tech Stack** *(Is the system your agents use to receive and respond to emails the same as your chat?)* | [same as chat or different — from tech stack] |
+| **Email landscape** *(Which email address(es) are your customers emailing?)* | [list email addresses from Gong/Granola] |
+| **Webform** *(Do you have a webform or contact form on your website?)* | [yes/no + description from Gong/Granola] |
+| **Custom / Filter Incoming Emails** | [how they triage/filter incoming email] |
+| **AI Agent / Human support** *(Which email address will the AI Agent respond as?)* | [from scoping discussions or TBD] |
+| **Launch plan** *(Do you require a gradual rollout?)* | [from rollout discussions or TBD] |
 
 ### Email Configuration
 
 | Field | SC Input |
 |---|---|
-| **Knowledge Base** *(Any additional sources specific to email?)* | [TBD if out of scope — otherwise from Gong/Granola KB discussions] |
-| **Use cases** *(Any use cases unique to email vs chat/voice?)* | [TBD if out of scope — otherwise from Gong/Granola — list email-specific use cases] |
-| **Workflow Mapping** | [TBD if out of scope — otherwise from Gong/Granola workflow discussions] |
-| **CC Support** | TBD |
-| **Metadata** | TBD |
+| **Knowledge Base** *(Any additional sources specific to email?)* | [from KB discussions or TBD] |
+| **Use cases** *(Any use cases unique to email vs chat/voice?)* | [email-specific use cases from Gong/Granola] |
+| **Workflow Mapping** | [from workflow discussions or TBD] |
+| **CC Support** | [from discussions or TBD] |
+| **Metadata** | [from discussions or TBD] |
 
 ### Email Handoffs
 
 | Field | SC Input |
 |---|---|
-| **Email / Ticketing** | [TBD if out of scope — otherwise from Gong/Granola — how email tickets are created/routed] |
-| **Routing** | TBD |
+| **Email / Ticketing** | [how email tickets are created/routed from Gong/Granola] |
+| **Routing** | [routing rules from discussions or TBD] |
 
 ### Additional Requirements
 
 | Field | SC Input |
 |---|---|
-| **Authentication** | [TBD if out of scope — otherwise from Gong/Granola auth discussions] |
-| **Conversation Start** | [TBD if out of scope — otherwise from Gong/Granola — how email conversations are initiated] |
+| **Authentication** | [from auth discussions or TBD] |
+| **Conversation Start** | [how email conversations are initiated or TBD] |
 
 ---
 
 ## VOICE SCOPING
 
-<!-- IF voice_scoping.out_of_scope is true, render the following block instead of filling in the table: -->
-<!-- OUT OF SCOPE BLOCK (use when voice is not in Phase 1 scope):
-[voice_scoping.notes — paste the summary of voice discussions with the customer here]
+[IF voice is OUT OF SCOPE: insert this block]
+[voice notes summary — what was discussed about voice during sales conversations]
 
 > ⚠️ **Voice channel is not included in the scope of this project.** The table below is preserved for future reference — fields are left as TBD.
--->
 
-<!-- IF voice is IN scope, fill the table cells from Gong/Granola/Glean data. -->
-<!-- IF voice is OUT OF SCOPE, leave all table cells as TBD. -->
+[IF voice IS IN SCOPE: fill all table cells from Gong/Granola/Glean data]
 
 ### Voice Architecture
 
 | Field | SC Input |
 |---|---|
-| **Telephony Provider** | [TBD if out of scope — otherwise from Gong/Granola/Glean — e.g. Genesys Cloud, Avaya, Five9, Twilio, Vonage] |
-| **CCaaS / Agent System** | [TBD if out of scope — otherwise from tech stack / Gong — full CCaaS platform name] |
-| **SIP Integration Type** | TBD |
-| **Current IVR** | TBD |
-| **Inbound vs Outbound** | [TBD if out of scope — otherwise from use cases — inbound / outbound / both] |
-| **Call Volume** | TBD |
-| **Current Agent Count** | TBD |
-| **Missed Call Rate** | TBD |
+| **Telephony Provider** | [e.g. Genesys Cloud, Avaya, Five9, Twilio, Vonage — from Gong/Granola/Glean] |
+| **CCaaS / Agent System** | [full CCaaS platform name from tech stack / Gong] |
+| **SIP Integration Type** | [from technical discussions or TBD] |
+| **Current IVR** | [describe current IVR menu and flow from Gong/Granola] |
+| **Inbound vs Outbound** | [inbound / outbound / both — from use cases] |
+| **Call Volume** | [monthly or daily call volume from data] |
+| **Current Agent Count** | [from volumes data / Gong] |
+| **Missed Call Rate** | [from pain points / Gong or TBD] |
 
 ### Voice Use Cases
 
 | Field | SC Input |
 |---|---|
-| **Primary Voice Use Case** | [TBD if out of scope — otherwise from Gong/Granola — main reason customers call] |
-| **Call Categorization / Triage** | TBD |
-| **Secondary Voice Use Cases** | TBD |
+| **Primary Voice Use Case** | [main reason customers call — from Gong/Granola] |
+| **Call Categorization / Triage** | [how calls are currently triaged from Gong/Granola] |
+| **Secondary Voice Use Cases** | [additional voice use cases from Gong/Granola] |
 
 ### Voice Technical Requirements
 
 | Field | SC Input |
 |---|---|
-| **APIs Required for Voice** | TBD |
-| **DTMF / Dial Pad Input** | TBD |
-| **SMS Capabilities** | TBD |
-| **Cross-Channel Interoperability** | TBD |
+| **APIs Required for Voice** | [from API discussions or TBD] |
+| **DTMF / Dial Pad Input** | [yes/no + details from technical discussions] |
+| **SMS Capabilities** | [yes/no + details from discussions] |
+| **Cross-Channel Interoperability** | [cross-channel needs from discussions or TBD] |
 
 ### Voice Handoffs
 
 | Field | SC Input |
 |---|---|
-| **Handoff to Human Agents** | [TBD if out of scope — otherwise from Gong/Granola — how voice calls hand off to humans] |
-| **Routing Requirements** | TBD |
+| **Handoff to Human Agents** | [how voice calls hand off to humans from Gong/Granola] |
+| **Routing Requirements** | [routing rules from discussions or TBD] |
 
 ### Voice Quality & Success Criteria
 
 | Field | SC Input |
 |---|---|
-| **Voice Quality Feedback from Demo** | [TBD if out of scope — otherwise from Gong call discussing voice demo quality] |
-| **Success Criteria for Voice** | TBD |
-| **Voice-Specific Risks** | TBD |
-| **Timeline** | [close date from SFDC — or planned future phase timeline if discussed] |
+| **Voice Quality Feedback from Demo** | [from Gong call discussing voice demo] |
+| **Success Criteria for Voice** | [from success criteria discussions or TBD] |
+| **Voice-Specific Risks** | [from risk discussions or TBD] |
+| **Timeline** | [close date from SFDC or planned future phase timeline] |
 
 ---
 
@@ -495,38 +302,49 @@ Use Notion-flavored Markdown to construct the page:
 - **Recording:** [URL]
 ```
 
-### 6c — Create the Notion page
+---
+
+## Step 5: Create the Google Doc
+
+**This step is MANDATORY — always run it, every time. Do NOT skip it or ask the user.**
+
+### 5a — Find the "PS Hand Over Docs" folder
+Use the Google Workspace MCP to find the folder ID for "PS Hand Over Docs" in Google Drive:
 ```
-notion-create-pages({
-  pages: [{
-    properties: { title: "PS Handoff — [Account Name] — [YYYY-MM-DD]" },
-    content: "[full markdown from 6b above, with all real data substituted in]"
-  }]
+google-workspace: search Drive for folder named "PS Hand Over Docs"
+```
+
+### 5b — Create the Google Doc
+Use `import_to_google_doc` to create the document with the full Markdown content from Step 4, placed in the "PS Hand Over Docs" folder:
+```
+import_to_google_doc({
+  title: "PS Handoff — [Account Name] — [YYYY-MM-DD]",
+  content: "[full markdown content from Step 4 with all real data substituted in]",
+  folderId: "[PS Hand Over Docs folder ID from 5a]"
 })
 ```
 
-Save the returned Notion page URL.
+Save the returned Google Doc URL.
 
 ---
 
-## Step 7: Report Back to the User
+## Step 6: Report Back to the User
 
 Tell the user:
-- ✅ `.docx` file name and full path (copied to clipboard)
-- ✅ Notion page URL
+- ✅ Google Doc URL (clickable link)
 - Summary of what was auto-filled vs left as TBD — list which fields still need manual input
 
 ---
 
 ## Important Notes
 
-- **ALL scoping sections are always included** — General, Chat, Email, and Voice are generated every time. Never skip a section, even if a channel is out of scope.
-- **Out-of-scope channels**: When email or voice is not in Phase 1 scope, set `out_of_scope: true` and populate `notes` with a brief summary of what was discussed (timing, interest level, future phase plans, any requirements mentioned). The script and Notion template will render a blurb + "not included in scope" callout above the table. Table rows stay as TBD — they are preserved for future use.
-- **Fill from data, not with TBD** — For in-scope channels, every table cell should be populated from Gong transcripts, Granola meetings, or Glean context. TBD is only for genuinely unknown fields with zero data found.
-- **The scoping tables are the most important part of this document** — the Chat, Email, and Voice scoping tables are what PS uses to build the implementation. In-scope tables must be filled out.
-- **Always publish to Notion (Step 6)** — this is not optional. Every run produces both a `.docx` AND a Notion page. Never skip or ask the user about it.
-- **Never hallucinate** account details — TBD is always better than a wrong answer
-- **Output dir** defaults to `./ps-knowledge-transfer/` relative to the user's current working directory
-- **Script location** is `${CLAUDE_PLUGIN_ROOT}/scripts/ps_doc_skill.py` — this resolves correctly regardless of where the plugin is installed
-- **Gong via Glean** — there is no standalone Gong MCP; use `mcp__glean__search` with `app: "gong"` and `mcp__glean__chat` to search indexed Gong transcripts. If Glean doesn't return Gong results, note it as TBD — don't skip the attempt
-- **Gong data enriches scoping fields directly** — extract telephony provider, email system, chat platform, volumes, IVR setup, use cases, handoff process from Gong transcripts and put them into the correct scoping table cells
+- **No local files** — do not generate a .docx or save anything locally. The Google Doc is the only output.
+- **No Notion page** — do not publish to Notion. Google Doc only.
+- **ALL scoping sections are always included** — General, Chat, Email, and Voice every time. Never skip a section.
+- **Out-of-scope channels**: When email or voice is not in Phase 1 scope, add the notes summary + ⚠️ callout above the table, and leave table rows as TBD.
+- **Fill from data, not TBD** — For in-scope channels, every table cell should be populated from Gong, Granola, or Glean. TBD is only for genuinely unknown fields.
+- **The scoping tables are the most important part of this document** — Chat, Email, and Voice scoping tables are what PS uses to build the implementation. In-scope tables must be filled.
+- **Always create the Google Doc (Step 5)** — mandatory, no exceptions.
+- **Never hallucinate** account details — TBD is always better than a wrong answer.
+- **Gong via Glean** — there is no standalone Gong MCP; use `mcp__glean__search` with `app: "gong"` and `mcp__glean__chat` to search indexed Gong transcripts. If Glean doesn't return Gong results, note it as TBD — don't skip the attempt.
+- **Gong data enriches scoping fields directly** — extract telephony provider, email system, chat platform, volumes, IVR setup, use cases, handoff process from Gong transcripts and put them into the correct scoping table cells.
