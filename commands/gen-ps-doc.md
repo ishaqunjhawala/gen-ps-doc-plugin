@@ -1,7 +1,7 @@
 ---
 description: Generate a Pre-Sales → PS Knowledge Transfer Google Doc for any account (fetches live data from Glean, Granola, Gong, Gmail & Slack)
 argument-hint: "<account name>"
-allowed-tools: Bash, Read, mcp__glean__chat, mcp__glean__search, mcp__ada__get_ada_metric, mcp__ada__get_ada_configuration
+allowed-tools: Bash, Read, mcp__glean__chat, mcp__glean__search, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__query_granola_meetings, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__list_meetings, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__get_meetings, mcp__28d90b4b-0f1f-4d6d-96f3-e7a6107a9d3c__slack_search_public_and_private, mcp__28d90b4b-0f1f-4d6d-96f3-e7a6107a9d3c__slack_read_user_profile, mcp__ada__get_ada_metric, mcp__ada__get_ada_configuration
 ---
 
 # Generate PS Knowledge Transfer Doc
@@ -32,7 +32,9 @@ Get the current user's name to fill the SC field in the doc:
 
 ### 2a — Salesforce Opportunity (via Glean)
 Query:
-> "Find the open Salesforce opportunity for [account name]. Return: opportunity name, stage, ARR/amount, close date, Salesforce URL, product channels (Chat/Email/Voice), AE name, SC name, next steps, forecast category, probability, employee count, region, segmentation."
+> "Find the open Salesforce opportunity for [account name]. Return: opportunity name, stage, ARR/amount, close date, **full Salesforce opportunity URL** (e.g. https://adasupport.lightning.force.com/lightning/r/Opportunity/[ID]/view), product channels (Chat/Email/Voice), AE name, SC name, next steps, forecast category, probability, employee count, region, segmentation."
+
+⚠️ **LINK RULE**: The Salesforce URL must be the actual opportunity URL returned by Glean — never use `https://www.salesforce.com` or any generic placeholder. If no real URL is returned, mark it `N/A` and flag it in the Data Sources Audit.
 
 ### 2b — Account Context (via Glean)
 Query:
@@ -50,13 +52,13 @@ Glean indexes all Gong activity — both call transcripts and email exchanges ca
 > Use `mcp__glean__search` with query: `"[account name]"`, app filter: `"gong"`, limit: 50, sort by recency
 > This returns both call recordings and email threads.
 > **EXHAUSTIVE RULE: Every result returned must be individually read and mined. If 10 calls are returned, all 10 are checked. If 30 are returned, all 30 are checked. Never stop at the first few results.**
-> For each result, note its title, date, and type (call transcript vs email exchange), then extract any scoping data it contains.
+> For each result, note its title, date, type (call transcript vs email exchange), and the **actual Gong URL for that call or email thread**. Then extract any scoping data it contains.
 
 **Search 2 — Semantic extraction (calls and emails):**
-> Use `mcp__glean__chat` with message: "From ALL Gong activity with [account name] — including every call transcript AND every email exchange — extract ALL of the following scoping details. Do not summarise across calls — give me specifics from each call and email separately: (1) Chat: monthly chat volume, current chat platform, chatbot/agent handoff setup, APIs needed, segmentation requirements; (2) Email: email system/platform, which email addresses customers contact, webform presence, email routing, AI agent email address, gradual rollout requirements, email use cases, ticketing/routing for email; (3) Voice: telephony provider, CCaaS platform, SIP integration type, current IVR setup, inbound vs outbound, call volume, agent count, missed call rate, voice use cases, DTMF requirements, SMS capabilities, handoff to human agents, routing requirements; (4) General: pain points, business drivers, tech stack, key contacts, objections, sentiment, next steps, commitments made, Gong call/email URLs. List the source (call title + date, or email subject + date) for each fact."
+> Use `mcp__glean__chat` with message: "From ALL Gong activity with [account name] — including every call transcript AND every email exchange — extract ALL of the following scoping details. Do not summarise across calls — give me specifics from each call and email separately: (1) Chat: monthly chat volume, current chat platform, chatbot/agent handoff setup, APIs needed, segmentation requirements; (2) Email: email system/platform, which email addresses customers contact, webform presence, email routing, AI agent email address, gradual rollout requirements, email use cases, ticketing/routing for email; (3) Voice: telephony provider, CCaaS platform, SIP integration type, current IVR setup, inbound vs outbound, call volume, agent count, missed call rate, voice use cases, DTMF requirements, SMS capabilities, handoff to human agents, routing requirements; (4) General: pain points, business drivers, tech stack, key contacts, objections, sentiment, next steps, commitments made, **Gong call/email URLs** (actual recording/thread links, not generic). List the source (call title + date + URL, or email subject + date + URL) for each fact."
 
 **After both searches, reconcile all results:**
-- Build a complete list of every Gong call and email thread found (title + date + type)
+- Build a complete list of every Gong call and email thread found (title + date + type + actual URL)
 - For each one, record what scoping data it contributed — even if it only confirmed something already known
 - If a call or email thread yielded nothing useful, note it explicitly as "no new scoping data" — do NOT silently skip it
 - Contradictions between calls (e.g. different volume numbers) must be flagged, not silently resolved — note both values and which call each came from
@@ -65,7 +67,7 @@ From the Gong results extract ALL of:
 - **Chat scoping**: volumes, current platform, handoff setup, APIs, segmentation
 - **Email scoping**: email system, routing, webform, AI agent email, use cases, rollout plan
 - **Voice scoping**: telephony provider (Genesys? Avaya? Five9? Twilio?), CCaaS, IVR, call volumes, agent count, use cases, DTMF, SMS, routing, handoff
-- **General**: pain points, tech stack, volumes, objections, sentiment, next steps, commitments made, Gong call/email URLs
+- **General**: pain points, tech stack, volumes, objections, sentiment, next steps, commitments made, actual Gong call/email URLs
 - **Note**: Gong email exchanges often contain explicit scoping answers, pricing discussions, and commitments that don't appear in call transcripts — treat them as equally important
 
 ### 2e — Gmail (via Glean)
@@ -75,23 +77,24 @@ Glean indexes Gmail, so direct emails between the AE/SC team and the prospect ar
 
 **Search 1 — Incoming emails from the account domain:**
 > Use `mcp__glean__search` with query: `"[account name]"`, app filter: `"gmail"`, limit: 50, sort by recency
-> For each result, note the subject, sender, date, and any scoping data it contains.
+> For each result, note the subject, sender, date, actual Gmail thread URL, and any scoping data it contains.
 
 **Search 2 — Semantic extraction from Gmail:**
-> Use `mcp__glean__chat` with message: "From all Gmail emails related to [account name] — including emails from the prospect's domain and emails the Ada team sent to them — extract ALL of the following: (1) explicit scoping answers or commitments the prospect gave in writing; (2) go-live dates or launch timelines mentioned; (3) pricing or commercial discussions; (4) technical requirements (APIs, integrations, platforms); (5) any concerns, blockers, or risks mentioned; (6) email addresses of prospect contacts. List the source (email subject + date + sender) for each fact."
+> Use `mcp__glean__chat` with message: "From all Gmail emails related to [account name] — including emails from the prospect's domain and emails the Ada team sent to them — extract ALL of the following: (1) explicit scoping answers or commitments the prospect gave in writing; (2) go-live dates or launch timelines mentioned; (3) pricing or commercial discussions; (4) technical requirements (APIs, integrations, platforms); (5) any concerns, blockers, or risks mentioned; (6) email addresses of prospect contacts. List the source (email subject + date + sender + Gmail URL) for each fact."
 
 **After both searches, reconcile all results:**
-- Build a complete list of every Gmail thread found (subject + date + sender)
+- Build a complete list of every Gmail thread found (subject + date + sender + actual URL)
 - For each one, record what scoping data it contributed — even if it only confirmed something already known
 - If a thread yielded nothing useful, note it explicitly as "no new scoping data" — do NOT silently skip it
 - Contradictions with other sources must be flagged — note both values and their sources
 
 **Note**: Gmail often contains the most direct and unambiguous scoping data — prospects frequently give written answers in email that are more precise than what's discussed verbally on calls.
 
-### 2f — Ada Bot (skip if no bot mentioned)
-- If Glean context mentions an Ada bot or demo instance for this account:
-  - Call `get_ada_configuration` — playbooks, actions, custom instructions
-  - Call `get_ada_metric` for `resolution_rate` and `csat_rate` (last 7 days)
+### 2f — Ada Bot
+- Search Glean for any Ada bot or demo instance associated with this account
+- If found, call `get_ada_configuration` — playbooks, actions, custom instructions
+- Call `get_ada_metric` for `resolution_rate` and `csat_rate` (last 7 days)
+- **LINK RULE**: Capture the actual Ada dashboard URL for the bot handle (e.g. `https://app.ada.cx/[handle]`). This link must appear in the General Scoping section wherever the bot is referenced.
 
 ---
 
@@ -145,6 +148,14 @@ Check the Salesforce `product_channels` field and Phase 1 scoping discussions:
 
 **CRITICAL: This is a structured scoping form — NOT a narrative brief. Use the exact table structure below. Every table cell must be filled with REAL data extracted from Gong, Granola, and Glean. TBD is only for fields where no data was found anywhere. The Chat, Email, and Voice scoping tables are the most important part of this document.**
 
+**LINK RULES (apply everywhere in the document):**
+- **SFDC Opp**: must be the actual Salesforce opportunity URL (e.g. `https://adasupport.lightning.force.com/lightning/r/Opportunity/[ID]/view`) — never `https://www.salesforce.com`
+- **Gong calls/emails**: must be the actual Gong recording or email thread URL returned from Glean — never a generic Gong link
+- **Gmail threads**: must be the actual Gmail thread URL — never a generic Gmail link
+- **Granola meetings**: must be the actual Granola meeting link if available
+- **Ada bot handle**: must be the actual `https://app.ada.cx/[handle]` URL
+- If a real URL was not returned by any data source, write `N/A` — never substitute a homepage or generic URL
+
 **FORMATTING RULES — always apply these when writing the doc content:**
 - **Multi-item table cells** (contacts, use cases, APIs, risks, tech stack items, languages): each item must be on its own line using `<br>` to separate items within a table cell. Never write them as a comma-separated inline list when there are 2+ items.
 - **Numbered lists** (KEY NEXT STEPS, any ordered sequence): always use `1.`, `2.`, `3.` on separate lines with a blank line before the list starts. Never inline numbered items.
@@ -167,7 +178,7 @@ Construct the full document content as Markdown. Substitute ALL placeholders wit
 | Field | SC Input |
 |---|---|
 | **Client Overview** *(Overview of Account + Business case with Ada)* | [company overview + HQ + industry + key business drivers] |
-| **SFDC Opp** | [Salesforce URL] |
+| **SFDC Opp** | [actual Salesforce opportunity URL — e.g. https://adasupport.lightning.force.com/lightning/r/Opportunity/[ID]/view] |
 | **Solution Survey** | [link or TBD] |
 | **Key client stakeholders & Roles** | [Name — Role<br>Name — Role<br>(one per line using \<br\>)] |
 | **Timezone** | [timezone] |
@@ -184,6 +195,7 @@ Construct the full document content as Markdown. Substitute ALL placeholders wit
 | **Product promises made to the client / FRs?** | [from discussions or TBD] |
 | **Cluster** | [US / US2 / Maple / EU — default Maple] |
 | **Number of Ai Agents** | [from discussions or TBD] |
+| **Ada Bot Handle** | [actual https://app.ada.cx/[handle] URL, or N/A if no bot found] |
 
 ### Miscellaneous
 
@@ -191,7 +203,7 @@ Construct the full document content as Markdown. Substitute ALL placeholders wit
 |---|---|
 | **Enrolled in Ada Academy** | No (pre-signature) |
 | **Security Requirements** | [from discussions or TBD] |
-| **Link + invites to Demo/Sandbox instance** | [Gong call URL or TBD] |
+| **Link + invites to Demo/Sandbox instance** | [actual Gong call URL or actual Granola meeting link — N/A if not found] |
 | **Pilot / Opt out** | TBD |
 | **Additional Notes / Risks** | [risks from data] |
 
@@ -351,7 +363,7 @@ Construct the full document content as Markdown. Substitute ALL placeholders wit
 - [item]
 
 **Sentiment:** [value]
-**Recording:** [URL]
+**Recording:** [actual Gong recording URL — not a generic link]
 
 ---
 
@@ -359,48 +371,57 @@ Construct the full document content as Markdown. Substitute ALL placeholders wit
 
 *Auto-generated — every source checked on [Today's date]*
 
+> ⚠️ **Contradiction flags are mandatory.** After all data is gathered, actively cross-check every field across all sources. If any source gives a different value for the same field (e.g. Gong says chat volume = 10k/mo, Gmail says 15k/mo), both values must be listed here with their source. Do not silently resolve contradictions — flag them explicitly so the PS team can verify with the client.
+
 ### Salesforce (via Glean)
-- [SFDC Opp URL — found / not found]
-- [ARR — found ($X) / not found]
-- [Close Date — found / not found]
-- [AE Name — found / not found]
-- [Channels — found (X) / not found]
-- [Stage — found / not found]
+- SFDC Opp URL: [actual URL found, or "not returned — marked N/A in doc"]
+- ARR: [found ($X) / not found]
+- Close Date: [found / not found]
+- AE Name: [found / not found]
+- Channels: [found (X) / not found]
+- Stage: [found / not found]
 
 ### Account Context (via Glean)
-- [Company Overview — found / not found]
-- [HQ — found / not found]
-- [Timezone — found / not found]
-- [Tech Stack — found (X, Y, Z) / not found]
-- [Key Contacts — found (N contacts) / not found]
-- [Business Drivers — found / not found]
-- [Key Volumes — found / not found]
+- Company Overview: [found / not found]
+- HQ: [found / not found]
+- Timezone: [found / not found]
+- Tech Stack: [found (X, Y, Z) / not found]
+- Key Contacts: [found (N contacts) / not found]
+- Business Drivers: [found / not found]
+- Key Volumes: [found / not found]
 
 ### Gong Call Transcripts (via Glean)
 - Calls found: [N] — ALL [N] checked
-- [Call Title] ([Date]) — [what it contributed, or "no new scoping data"]
-- [Call Title] ([Date]) — [what it contributed, or "no new scoping data"]
+- [Call Title] ([Date]) ([actual Gong URL]) — [what it contributed, or "no new scoping data"]
 - *(repeat for every call)*
 - ❌ Fields not found in any call: [list or "none"]
-- ⚠️ Contradictions: [e.g. "Call volume: 10k/mo in Jan call vs 15k/mo in Feb call — used Feb as more recent" or "none"]
+- ⚠️ Contradictions: [e.g. "Chat volume: 10k/mo stated in [Call A, Date, URL] vs 15k/mo stated in [Call B, Date, URL]" — or "none detected"]
 
 ### Gong Email Exchanges (via Glean)
 - Email threads found: [N] — ALL [N] checked
-- [Subject] ([Date]) — [what it contributed, or "no new scoping data"]
+- [Subject] ([Date]) ([actual Gong email URL]) — [what it contributed, or "no new scoping data"]
 - *(repeat for every thread)*
-- ❌ [Fields not found / "No email exchanges indexed" if none returned]
+- ❌ Fields not found: [list / "No email exchanges indexed" if none returned]
+- ⚠️ Contradictions: [specific contradictions with source + URL, or "none detected"]
 
 ### Gmail (via Glean)
 - Threads found: [N] — ALL [N] checked
-- [Subject] ([Date], from [Sender]) — [what it contributed, or "no new scoping data"]
+- [Subject] ([Date], from [Sender]) ([actual Gmail thread URL]) — [what it contributed, or "no new scoping data"]
 - *(repeat for every thread)*
-- ❌ [Fields not found / "No Gmail threads indexed" if none returned]
+- ❌ Fields not found: [list / "No Gmail threads indexed" if none returned]
+- ⚠️ Contradictions: [specific contradictions with source + URL, or "none detected"]
 
 ### Granola Meeting Notes
 - Meetings found: [N] — ALL [N] checked
-- [Meeting Title] ([Date]) — [what it contributed, or "no new scoping data"]
+- [Meeting Title] ([Date]) ([Granola meeting link if available]) — [what it contributed, or "no new scoping data"]
 - *(repeat for every meeting)*
 - ❌ Fields not found in any meeting: [list or "none"]
+- ⚠️ Contradictions: [specific contradictions with source, or "none detected"]
+
+### Ada Bot
+- Bot handle found: [yes — https://app.ada.cx/[handle] / no bot found for this account]
+- AR Rate (last 7d): [X% / not retrieved]
+- CSAT Rate (last 7d): [X% / not retrieved]
 
 ### Slack Profile
 - SC Name: [name found or "defaulted to SC"]
@@ -444,6 +465,7 @@ Tell the user:
 1. ✅ Google Doc URL (clickable link)
 2. A one-line summary: how many Gong calls, Gong email threads, Gmail threads, and Granola meetings were found and checked (e.g. "Checked 6 Gong calls, 3 Gong email threads, 5 Gmail threads, 4 Granola meetings")
 3. A short list of any fields still left as TBD that need manual input — so the SC knows exactly what to fill in before handing the doc to PS
+4. Any ⚠️ contradiction flags raised in the Data Sources Audit — call these out explicitly so the user knows what to verify
 
 The full Data Sources Audit is at the end of the Google Doc itself.
 
@@ -462,3 +484,6 @@ The full Data Sources Audit is at the end of the Google Doc itself.
 - **Gong via Glean** — there is no standalone Gong MCP; use `mcp__glean__search` with `app: "gong"` and `mcp__glean__chat` to search indexed Gong transcripts. If Glean doesn't return Gong results, note it as TBD — don't skip the attempt.
 - **Gong data enriches scoping fields directly** — extract telephony provider, email system, chat platform, volumes, IVR setup, use cases, handoff process from Gong transcripts and put them into the correct scoping table cells.
 - **Gmail via Glean** — use `mcp__glean__search` with `app: "gmail"` to search indexed Gmail threads. Gmail often contains the most explicit written scoping answers — treat it as equally important as Gong. If Glean doesn't return Gmail results, note it as TBD — don't skip the attempt.
+- **Real links only** — every URL in the document must be an actual URL returned from a data source. Never substitute a homepage, a generic domain, or a placeholder. If no real URL was found, write `N/A`.
+- **Data Sources Audit is always last** — it is the final section of every generated document, written after all content sections are complete.
+- **Contradictions must be flagged** — never silently resolve conflicting data. Always surface both values with their sources in the Data Sources Audit, and call them out in Step 6.
