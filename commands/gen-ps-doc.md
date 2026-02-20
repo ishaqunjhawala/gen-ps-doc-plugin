@@ -1,12 +1,12 @@
 ---
-description: Generate a Pre-Sales → PS Knowledge Transfer Google Doc for any account (fetches live data from Glean, Granola, Gong, Gmail & Slack)
+description: Generate a Pre-Sales → PS Knowledge Transfer Google Doc for any account (fetches live data from Glean, Granola, Gong, Gmail & Ada)
 argument-hint: "<account name>"
-allowed-tools: Bash, Read, mcp__glean__chat, mcp__glean__search, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__query_granola_meetings, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__list_meetings, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__get_meetings, mcp__28d90b4b-0f1f-4d6d-96f3-e7a6107a9d3c__slack_search_public_and_private, mcp__28d90b4b-0f1f-4d6d-96f3-e7a6107a9d3c__slack_read_user_profile, mcp__ada__get_ada_metric, mcp__ada__get_ada_configuration
+allowed-tools: Bash, Read, mcp__glean__chat, mcp__glean__search, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__query_granola_meetings, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__list_meetings, mcp__b64aba26-624b-471d-a4c9-bc9c8ca47541__get_meetings, mcp__ada__get_ada_metric, mcp__ada__get_ada_configuration
 ---
 
 # Generate PS Knowledge Transfer Doc
 
-Generate a Pre-Sales → PS Knowledge Transfer Google Doc by gathering live data from Glean (Salesforce + Gong + Gmail), Granola (meeting notes), and Slack. The output is a Google Doc saved to the "PS Hand Over Docs" folder in Google Drive. No local files, no Notion page.
+Generate a Pre-Sales → PS Knowledge Transfer Google Doc by gathering live data from Glean (Salesforce + Gong + Gmail), Granola (meeting notes), and Ada. The output is a Google Doc saved to the "PS Hand Over Docs" folder in Google Drive. No local files, no Notion page.
 
 ## Arguments
 

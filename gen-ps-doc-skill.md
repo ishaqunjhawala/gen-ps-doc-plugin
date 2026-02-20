@@ -1,11 +1,11 @@
 ---
 name: gen-ps-doc
-description: Generate a Pre-Sales → PS Knowledge Transfer Google Doc for any account (fetches live data from Glean, Granola, Gong, Gmail & Slack)
+description: Generate a Pre-Sales → PS Knowledge Transfer Google Doc for any account (fetches live data from Glean, Granola, Gong, Gmail & Ada)
 ---
 
 # Generate PS Knowledge Transfer Doc
 
-Generate a Pre-Sales → PS Knowledge Transfer Google Doc by gathering live data from Glean (Salesforce + Gong + Gmail), Granola (meeting notes), and Slack. The output is a Google Doc saved to the "PS Hand Over Docs" folder in Google Drive. No local files, no Notion page.
+Generate a Pre-Sales → PS Knowledge Transfer Google Doc by gathering live data from Glean (Salesforce + Gong + Gmail), Granola (meeting notes), and Ada. The output is a Google Doc saved to the "PS Hand Over Docs" folder in Google Drive. No local files, no Notion page.
 
 When a user invokes this skill with an account name (e.g. `"Grow Therapy"`), immediately begin generating the doc. Do not ask clarifying questions — start gathering data right away.
 
