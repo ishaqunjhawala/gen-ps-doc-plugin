@@ -19,33 +19,26 @@ Parse the arguments:
 
 ---
 
-## Step 1: Identify the SC
+## Step 1: Gather Account Data (run all in parallel where possible)
 
-Get the current user's name to fill the SC field in the doc:
-- Call `slack_read_user_profile` with no user_id (returns current user)
-- Extract `display_name` or `real_name`
-- If unavailable, default to `"SC"` and continue — don't block on this
-
----
-
-## Step 2: Gather Account Data (run all in parallel where possible)
-
-### 2a — Salesforce Opportunity (via Glean)
+### 1a — Salesforce Opportunity (via Glean)
 Query:
 > "Find the open Salesforce opportunity for [account name]. Return: opportunity name, stage, ARR/amount, close date, **full Salesforce opportunity URL** (e.g. https://adasupport.lightning.force.com/lightning/r/Opportunity/[ID]/view), product channels (Chat/Email/Voice), AE name, SC name, next steps, forecast category, probability, employee count, region, segmentation."
 
+**SC name**: extract from the Salesforce opportunity record. Use this as the `SC` field in the document header. If not found in Salesforce, default to `"SC"`.
+
 ⚠️ **LINK RULE**: The Salesforce URL must be the actual opportunity URL returned by Glean — never use `https://www.salesforce.com` or any generic placeholder. If no real URL is returned, mark it `N/A` and flag it in the Data Sources Audit.
 
-### 2b — Account Context (via Glean)
+### 1b — Account Context (via Glean)
 Query:
 > "What do we know about [account name] as an Ada prospect or customer? Return: company overview, HQ location, timezone, tech stack (CRM, ticketing, CCaaS tools), key contacts and their roles, primary use case, secondary use cases, business drivers, known risks or blockers, API/architecture requirements, key volumes (monthly chat/email/voice conversations, number of agents), telephony provider, IVR setup, email routing system, webform presence."
 
-### 2c — Meeting Notes (via Granola)
+### 1c — Meeting Notes (via Granola)
 - Call `query_granola_meetings` with query: `"[account name] meeting notes action items demo discovery scoping chat email voice"`
 - Then call `get_meetings` for the 5 most recent account-related meetings to get full details
 - **Extract from these meetings: any scoping answers discussed** — email setup, voice telephony, chat volumes, tech stack, use cases, handoff requirements, APIs, authentication, routing, IVR details, success criteria
 
-### 2d — Gong Calls AND Email Exchanges (via Glean)
+### 1d — Gong Calls AND Email Exchanges (via Glean)
 Glean indexes all Gong activity — both call transcripts and email exchanges captured by Gong Engage. **Every single result returned must be checked — no skipping, no sampling.**
 
 **Search 1 — Raw keyword search (calls and emails):**
@@ -70,7 +63,7 @@ From the Gong results extract ALL of:
 - **General**: pain points, tech stack, volumes, objections, sentiment, next steps, commitments made, actual Gong call/email URLs
 - **Note**: Gong email exchanges often contain explicit scoping answers, pricing discussions, and commitments that don't appear in call transcripts — treat them as equally important
 
-### 2e — Gmail (via Glean)
+### 1e — Gmail (via Glean)
 Glean indexes Gmail, so direct emails between the AE/SC team and the prospect are searchable. These often contain explicit commitments, scoping clarifications, and go-live timelines that didn't make it into Gong or Granola.
 
 **EXHAUSTIVE RULE: Every email thread returned must be individually read — no skipping.**
@@ -90,7 +83,7 @@ Glean indexes Gmail, so direct emails between the AE/SC team and the prospect ar
 
 **Note**: Gmail often contains the most direct and unambiguous scoping data — prospects frequently give written answers in email that are more precise than what's discussed verbally on calls.
 
-### 2f — Ada Bot
+### 1f — Ada Bot
 - Search Glean for any Ada bot or demo instance associated with this account
 - If found, call `get_ada_configuration` — playbooks, actions, custom instructions
 - Call `get_ada_metric` for `resolution_rate` and `csat_rate` (last 7 days)
@@ -98,7 +91,7 @@ Glean indexes Gmail, so direct emails between the AE/SC team and the prospect ar
 
 ---
 
-## Step 3: Synthesize Scoping Answers
+## Step 2: Synthesize Scoping Answers
 
 **CRITICAL: Before building the document, do a full synthesis pass over ALL gathered data (Salesforce, Glean context, Granola meetings, Gong calls) to extract every scoping answer possible. The goal is to populate as many fields as possible with REAL data — TBD is a last resort, not a default.**
 
@@ -144,7 +137,7 @@ Check the Salesforce `product_channels` field and Phase 1 scoping discussions:
 
 ---
 
-## Step 4: Build the Google Doc Content
+## Step 3: Build the Google Doc Content
 
 **CRITICAL: This is a structured scoping form — NOT a narrative brief. Use the exact table structure below. Every table cell must be filled with REAL data extracted from Gong, Granola, and Glean. TBD is only for fields where no data was found anywhere. The Chat, Email, and Voice scoping tables are the most important part of this document.**
 
@@ -423,9 +416,6 @@ Construct the full document content as Markdown. Substitute ALL placeholders wit
 - AR Rate (last 7d): [X% / not retrieved]
 - CSAT Rate (last 7d): [X% / not retrieved]
 
-### Slack Profile
-- SC Name: [name found or "defaulted to SC"]
-
 ### ⚠️ Fields Still TBD — Needs Manual Input
 - **General**: [field names, or "none"]
 - **Chat**: [field names, or "none"]
@@ -435,17 +425,17 @@ Construct the full document content as Markdown. Substitute ALL placeholders wit
 
 ---
 
-## Step 5: Create the Google Doc
+## Step 4: Create the Google Doc
 
 **This step is MANDATORY — always run it, every time. Do NOT skip it or ask the user.**
 
-### 5a — Find the "PS Hand Over Docs" folder
+### 4a — Find the "PS Hand Over Docs" folder
 Use the Google Workspace MCP to find the folder ID for "PS Hand Over Docs" in Google Drive:
 ```
 google-workspace: search Drive for folder named "PS Hand Over Docs"
 ```
 
-### 5b — Create the Google Doc
+### 4b — Create the Google Doc
 Use `import_to_google_doc` to create the document with the full Markdown content from Step 4, placed in the "PS Hand Over Docs" folder:
 ```
 import_to_google_doc({
@@ -459,7 +449,7 @@ Save the returned Google Doc URL.
 
 ---
 
-## Step 6: Report Back to the User
+## Step 5: Report Back to the User
 
 Tell the user:
 1. ✅ Google Doc URL (clickable link)
@@ -479,7 +469,7 @@ The full Data Sources Audit is at the end of the Google Doc itself.
 - **Out-of-scope channels**: When email or voice is not in Phase 1 scope, add the notes summary + ⚠️ callout above the table, and leave table rows as TBD.
 - **Fill from data, not TBD** — For in-scope channels, every table cell should be populated from Gong, Granola, or Glean. TBD is only for genuinely unknown fields.
 - **The scoping tables are the most important part of this document** — Chat, Email, and Voice scoping tables are what PS uses to build the implementation. In-scope tables must be filled.
-- **Always create the Google Doc (Step 5)** — mandatory, no exceptions.
+- **Always create the Google Doc (Step 4)** — mandatory, no exceptions.
 - **Never hallucinate** account details — TBD is always better than a wrong answer.
 - **Gong via Glean** — there is no standalone Gong MCP; use `mcp__glean__search` with `app: "gong"` and `mcp__glean__chat` to search indexed Gong transcripts. If Glean doesn't return Gong results, note it as TBD — don't skip the attempt.
 - **Gong data enriches scoping fields directly** — extract telephony provider, email system, chat platform, volumes, IVR setup, use cases, handoff process from Gong transcripts and put them into the correct scoping table cells.
