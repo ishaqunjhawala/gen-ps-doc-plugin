@@ -19,7 +19,35 @@ Parse the arguments:
 
 ---
 
-## Step 1: Gather Account Data (run all in parallel where possible)
+## ⚡ EXECUTION MODEL — THREE PHASES
+
+This skill runs in three stateless phases. Each phase must complete fully before the next begins.
+
+| Phase | What happens |
+|---|---|
+| **Phase A** | Gather ALL raw data from every source. Count every item. Write ALL raw data verbatim to a Google Drive scratch file. |
+| **Phase B** | Re-read the scratch file. Extract scoping answers. Determine channel scope from SFDC `product_channels`. Identify contradictions. |
+| **Phase C** | Re-read the scratch file. Build the Google Doc. Run post-doc completeness check. Report back. |
+
+**Why three phases?** Context compaction mid-session can cause data gathered early to be silently lost by the time synthesis runs. Phases A→B→C are protected against this because Phase B and C always read from the scratch file — never from conversation memory.
+
+---
+
+## Step 1 (Phase A): Gather Account Data + Write Scratch File
+
+### Step 1 Overview
+Run all sub-steps 1a–1f. After EACH sub-step, output a numbered list of every source found (title + date + URL). This is the **Source Count Gate** — it confirms data was captured before moving on.
+
+### Source Count Gate (after every sub-step)
+After completing each sub-step, output:
+```
+Sources found in [sub-step name]: [N]
+1. [Title] — [Date] — [URL]
+2. [Title] — [Date] — [URL]
+...
+Total: [N] sources
+```
+If N = 0, note it explicitly and do NOT skip — record "0 sources found" and proceed.
 
 ### 1a — Salesforce Opportunity (via Glean)
 Query:
@@ -91,15 +119,56 @@ Glean indexes Gmail, so direct emails between the AE/SC team and the prospect ar
 
 ---
 
-## Step 2: Synthesize Scoping Answers
+### ✅ Phase A Checkpoint — Write Scratch File to Google Drive
+
+**This step is mandatory. Do NOT proceed to Phase B until the scratch file is written.**
+
+After completing all sub-steps 1a–1f, create a Google Doc in the "PS Hand Over Docs" folder titled:
+> `[Account Name] PS Doc Scratch — [YYYY-MM-DD]`
+
+The scratch file must contain, verbatim and unedited:
+1. **Source inventory** — every item found in every sub-step (title + date + URL + type)
+2. **Raw SFDC data** — full Salesforce opportunity record as returned (all fields, verbatim)
+3. **Raw Granola data** — full meeting notes from all meetings retrieved
+4. **Raw Gong data** — every call transcript excerpt and email exchange found via Glean
+5. **Raw Gmail data** — every thread subject, sender, date, URL, and extracted content
+6. **Raw Ada data** — configuration, AR rate, CSAT rate
+
+After writing the scratch file, output:
+```
+✅ Phase A complete.
+Scratch file created: [Google Doc URL]
+Sources captured:
+  - Gong calls: [N]
+  - Gong email threads: [N]
+  - Gmail threads: [N]
+  - Granola meetings: [N]
+  - SFDC: [found / not found]
+  - Ada bot: [found / not found]
+Proceeding to Phase B.
+```
+
+---
+
+## Step 2 (Phase B): Synthesize Scoping Answers
+
+**PHASE B READS FROM THE SCRATCH FILE — not from conversation memory. Re-read the scratch file Google Doc before doing anything in this step.**
 
 **CRITICAL: Before building the document, do a full synthesis pass over ALL gathered data (Salesforce, Glean context, Granola meetings, Gong calls) to extract every scoping answer possible. The goal is to populate as many fields as possible with REAL data — TBD is a last resort, not a default.**
 
-### Out-of-Scope Channel Detection
-Check the Salesforce `product_channels` field and Phase 1 scoping discussions:
-- If **Email is not in Phase 1 scope**: note `email_out_of_scope = True` and capture a brief summary of what was discussed (timing, platform, future phase plans)
-- If **Voice is not in Phase 1 scope**: note `voice_out_of_scope = True` and capture a brief summary of what was discussed (telephony details, timeline, future phase plans)
-- If a channel IS in scope: fill every table cell from data
+### Channel Scope Determination — SFDC `product_channels` Drives Scope
+
+**The SFDC `product_channels` field is the single source of truth for channel scope. Do NOT use Gong discussions, meeting notes, or any other source to determine scope.**
+
+1. From the scratch file, read the verbatim value of `product_channels` from the Salesforce opportunity record
+2. Paste that exact value into the `## ⚠️ CONTRADICTION FLAGS` section (see Step 3 template)
+3. Map channels using this exact logic — no interpretation, no inference:
+   - `product_channels` contains "Chat" or "Messaging" → **Chat is IN scope**
+   - `product_channels` contains "Email" → **Email is IN scope**
+   - `product_channels` contains "Voice" or "Phone" → **Voice is IN scope**
+   - A channel NOT listed in `product_channels` → that channel is OUT of scope for Phase 1
+4. If `product_channels` is blank or not found: default ALL channels to IN scope and flag it in `## ⚠️ CONTRADICTION FLAGS`
+5. Record `email_in_scope`, `voice_in_scope`, `chat_in_scope` as True/False based purely on the above mapping
 
 ### Chat Scoping Synthesis
 - What platform do they currently use for chat? (from tech stack / Gong)
@@ -137,7 +206,9 @@ Check the Salesforce `product_channels` field and Phase 1 scoping discussions:
 
 ---
 
-## Step 3: Build the Google Doc Content
+## Step 3 (Phase C): Build the Google Doc Content
+
+**PHASE C READS FROM THE SCRATCH FILE — not from conversation memory. Re-read the scratch file Google Doc before doing anything in this step.**
 
 **CRITICAL: This is a structured scoping form — NOT a narrative brief. Use the exact table structure below. Every table cell must be filled with REAL data extracted from Gong, Granola, and Glean. TBD is only for fields where no data was found anywhere. The Chat, Email, and Voice scoping tables are the most important part of this document.**
 
@@ -163,6 +234,21 @@ Construct the full document content as Markdown. Substitute ALL placeholders wit
 # Sales to Professional Services Handoff — [Account Name]
 
 **Generated:** [Today's date] | **SC:** [SC Name]
+
+---
+
+## ⚠️ CONTRADICTION FLAGS
+
+> This section is **mandatory** and must appear in every document. It cannot be omitted. If no contradictions were detected, write "None detected." — do not leave this section blank or skip it.
+
+**SFDC `product_channels` (verbatim):** `[paste exact value here — e.g. "Messaging + Email"]`
+**Channels in scope (derived from above):** [Chat / Email / Voice — list only what appears in product_channels]
+**Channels out of scope for Phase 1:** [list channels not in product_channels, or "None"]
+
+**Data contradictions found across sources:**
+[List every field where two or more sources gave different values. Format:
+- **[Field name]**: [Source A] says [value A] | [Source B] says [value B] — PS team to verify with client
+Or if none: "None detected."]
 
 ---
 
@@ -440,8 +526,8 @@ Use `import_to_google_doc` to create the document with the full Markdown content
 ```
 import_to_google_doc({
   title: "PS Handoff — [Account Name] — [YYYY-MM-DD]",
-  content: "[full markdown content from Step 4 with all real data substituted in]",
-  folderId: "[PS Hand Over Docs folder ID from 5a]"
+  content: "[full markdown content from Step 3 with all real data substituted in]",
+  folderId: "[PS Hand Over Docs folder ID from 4a]"
 })
 ```
 
@@ -449,13 +535,22 @@ Save the returned Google Doc URL.
 
 ---
 
-## Step 5: Report Back to the User
+## Step 5: Post-Doc Completeness Check + Report Back
 
+### Step 5a — Completeness Check (mandatory before reporting)
+After the Google Doc is created, perform a completeness check by re-reading the scratch file:
+1. Scan every table cell in the Google Doc for: TBD, Unknown, blank values
+2. For each TBD: cross-reference the scratch file — if the data exists in the scratch file, fill it in the doc now; if not, leave it TBD and add it to the report
+3. Verify the `## ⚠️ CONTRADICTION FLAGS` section exists and contains the verbatim SFDC `product_channels` value
+4. Verify all URLs in the doc are real (non-placeholder) — if any placeholder URL was written, replace it with `N/A` and flag it
+
+### Step 5b — Report Back
 Tell the user:
 1. ✅ Google Doc URL (clickable link)
-2. A one-line summary: how many Gong calls, Gong email threads, Gmail threads, and Granola meetings were found and checked (e.g. "Checked 6 Gong calls, 3 Gong email threads, 5 Gmail threads, 4 Granola meetings")
-3. A short list of any fields still left as TBD that need manual input — so the SC knows exactly what to fill in before handing the doc to PS
-4. Any ⚠️ contradiction flags raised in the Data Sources Audit — call these out explicitly so the user knows what to verify
+2. ✅ Scratch file URL (clickable link)
+3. One-line source summary (e.g. "Checked 6 Gong calls, 3 Gong email threads, 5 Gmail threads, 4 Granola meetings")
+4. Fields still TBD needing manual input — so the SC knows exactly what to fill in before handing the doc to PS
+5. Any ⚠️ contradiction flags raised — call these out explicitly so the user knows what to verify
 
 The full Data Sources Audit is at the end of the Google Doc itself.
 
@@ -476,4 +571,4 @@ The full Data Sources Audit is at the end of the Google Doc itself.
 - **Gmail via Glean** — use `mcp__glean__search` with `app: "gmail"` to search indexed Gmail threads. Gmail often contains the most explicit written scoping answers — treat it as equally important as Gong. If Glean doesn't return Gmail results, note it as TBD — don't skip the attempt.
 - **Real links only** — every URL in the document must be an actual URL returned from a data source. Never substitute a homepage, a generic domain, or a placeholder. If no real URL was found, write `N/A`.
 - **Data Sources Audit is always last** — it is the final section of every generated document, written after all content sections are complete.
-- **Contradictions must be flagged** — never silently resolve conflicting data. Always surface both values with their sources in the Data Sources Audit, and call them out in Step 6.
+- **Contradictions must be flagged** — never silently resolve conflicting data. Always surface both values with their sources in the Data Sources Audit, and call them out in Step 5.

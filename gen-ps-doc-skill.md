@@ -13,7 +13,32 @@ When a user invokes this skill with an account name (e.g. `"Grow Therapy"`), imm
 
 ---
 
-## Step 1: Gather Account Data (run all in parallel where possible)
+## ⚡ EXECUTION MODEL — THREE PHASES
+
+This skill executes in three stateless phases. Each phase is independent and re-runnable.
+
+- **Phase A** — Raw data gathering → write everything to a scratch file in Google Drive
+- **Phase B** — Scoping extraction → read from scratch file, derive scope answers
+- **Phase C** — Document build → read from scratch file, populate all sections
+
+**CRITICAL: After Phase A completes, ALL synthesis and document-building reads from the scratch file — never from conversation memory. This protects against context compaction data loss.**
+
+---
+
+## Step 1 (Phase A): Gather Account Data + Write Scratch File
+
+### Step 1 Overview
+Run all sub-steps in parallel where possible. After ALL sub-steps complete, write a scratch file to Google Drive before proceeding to Step 2.
+
+### Source Count Gate (after every sub-step)
+After each sub-step below, output a numbered list of every source found, including title + date + URL. Do not proceed to the next sub-step until the count is confirmed. Example:
+```
+✅ 1d COMPLETE — Gong sources found (14 total):
+1. [Call Title] — [Date] — [URL]
+2. [Call Title] — [Date] — [URL]
+...
+```
+If a sub-step returns 0 results, explicitly state: `⚠️ 1x — 0 results returned from [source]`
 
 ### 1a — Salesforce Opportunity (via Glean)
 Query:
@@ -32,19 +57,21 @@ Query:
 - Then call `get_meetings` for the 5 most recent account-related meetings to get full details
 - **Extract from these meetings: any scoping answers discussed** — email setup, voice telephony, chat volumes, tech stack, use cases, handoff requirements, APIs, authentication, routing, IVR details, success criteria
 
-### 1d — Gong Calls AND Email Exchanges (via Glean)
-Glean indexes all Gong activity — both call transcripts and email exchanges captured by Gong Engage. **Every single result returned must be checked — no skipping, no sampling.**
+### 1d — Gong Calls AND Email Exchanges
 
-**Search 1 — Raw keyword search (calls and emails):**
-> Use `mcp__glean__search` with query: `"[account name]"`, app filter: `"gong"`, limit: 50, sort by recency
-> This returns both call recordings and email threads.
+**Every single result returned must be checked — no skipping, no sampling.**
+
+**PRIMARY — Use Gong MCP directly (preferred):**
+> Call `gong_search_calls` (or equivalent Gong MCP tool) with query: `"[account name]"`, limit: 50, sort by recency
+> If Gong MCP returns results, use those. Extract call titles, dates, actual Gong URLs, and all scoping data from each result.
+> Also search for email exchanges captured by Gong Engage: call `gong_search_emails` (or equivalent) with query: `"[account name]"`, limit: 50
 > **EXHAUSTIVE RULE: Every result returned must be individually read and mined. If 10 calls are returned, all 10 are checked. If 30 are returned, all 30 are checked. Never stop at the first few results.**
-> For each result, note its title, date, type (call transcript vs email exchange), and the **actual Gong URL for that call or email thread**. Then extract any scoping data it contains.
 
-**Search 2 — Semantic extraction (calls and emails):**
-> Use `mcp__glean__chat` with message: "From ALL Gong activity with [account name] — including every call transcript AND every email exchange — extract ALL of the following scoping details. Do not summarise across calls — give me specifics from each call and email separately: (1) Chat: monthly chat volume, current chat platform, chatbot/agent handoff setup, APIs needed, segmentation requirements; (2) Email: email system/platform, which email addresses customers contact, webform presence, email routing, AI agent email address, gradual rollout requirements, email use cases, ticketing/routing for email; (3) Voice: telephony provider, CCaaS platform, SIP integration type, current IVR setup, inbound vs outbound, call volume, agent count, missed call rate, voice use cases, DTMF requirements, SMS capabilities, handoff to human agents, routing requirements; (4) General: pain points, business drivers, tech stack, key contacts, objections, sentiment, next steps, commitments made, **Gong call/email URLs** (actual recording/thread links, not generic). List the source (call title + date + URL, or email subject + date + URL) for each fact."
+**FALLBACK — If Gong MCP is unavailable or returns no results, use Glean:**
+> Search 1: Use `mcp__glean__search` with query: `"[account name]"`, app filter: `"gong"`, limit: 50, sort by recency
+> Search 2: Use `mcp__glean__chat` with message: "From ALL Gong activity with [account name] — including every call transcript AND every email exchange — extract ALL of the following scoping details. Do not summarise across calls — give me specifics from each call and email separately: (1) Chat: monthly chat volume, current chat platform, chatbot/agent handoff setup, APIs needed, segmentation requirements; (2) Email: email system/platform, which email addresses customers contact, webform presence, email routing, AI agent email address, gradual rollout requirements, email use cases, ticketing/routing for email; (3) Voice: telephony provider, CCaaS platform, SIP integration type, current IVR setup, inbound vs outbound, call volume, agent count, missed call rate, voice use cases, DTMF requirements, SMS capabilities, handoff to human agents, routing requirements; (4) General: pain points, business drivers, tech stack, key contacts, objections, sentiment, next steps, commitments made, **Gong call/email URLs** (actual recording/thread links, not generic). List the source (call title + date + URL, or email subject + date + URL) for each fact."
 
-**After both searches, reconcile all results:**
+**After all searches, reconcile all results:**
 - Build a complete list of every Gong call and email thread found (title + date + type + actual URL)
 - For each one, record what scoping data it contributed — even if it only confirmed something already known
 - If a call or email thread yielded nothing useful, note it explicitly as "no new scoping data" — do NOT silently skip it
@@ -57,23 +84,29 @@ From the Gong results extract ALL of:
 - **General**: pain points, tech stack, volumes, objections, sentiment, next steps, commitments made, actual Gong call/email URLs
 - **Note**: Gong email exchanges often contain explicit scoping answers, pricing discussions, and commitments that don't appear in call transcripts — treat them as equally important
 
-### 1e — Gmail (via Glean)
-Glean indexes Gmail, so direct emails between the AE/SC team and the prospect are searchable. These often contain explicit commitments, scoping clarifications, and go-live timelines that didn't make it into Gong or Granola.
+### 1e — Gmail
+
+Direct emails between the AE/SC team and the prospect often contain explicit commitments, scoping clarifications, and go-live timelines that didn't make it into Gong or Granola.
 
 **EXHAUSTIVE RULE: Every email thread returned must be individually read — no skipping.**
 
-**Search 1 — Incoming emails from the account domain:**
-> Use `mcp__glean__search` with query: `"[account name]"`, app filter: `"gmail"`, limit: 50, sort by recency
+**PRIMARY — Use Google Workspace MCP directly (preferred):**
+> Call `gmail_search` (or equivalent Google Workspace MCP tool) with query: `"[account name]"`, limit: 50, sort by recency
 > For each result, note the subject, sender, date, actual Gmail thread URL, and any scoping data it contains.
+> Also search with query: `"from:[account domain]"` to catch inbound emails from the prospect's domain.
+> If Google Workspace MCP returns results, use those as the primary source.
 
-**Search 2 — Semantic extraction from Gmail:**
-> Use `mcp__glean__chat` with message: "From all Gmail emails related to [account name] — including emails from the prospect's domain and emails the Ada team sent to them — extract ALL of the following: (1) explicit scoping answers or commitments the prospect gave in writing; (2) go-live dates or launch timelines mentioned; (3) pricing or commercial discussions; (4) technical requirements (APIs, integrations, platforms); (5) any concerns, blockers, or risks mentioned; (6) email addresses of prospect contacts. List the source (email subject + date + sender + Gmail URL) for each fact."
+**FALLBACK — If Google Workspace MCP is unavailable or returns no results, use Glean:**
+> Search 1: Use `mcp__glean__search` with query: `"[account name]"`, app filter: `"gmail"`, limit: 50, sort by recency
+> Search 2: Use `mcp__glean__chat` with message: "From all Gmail emails related to [account name] — including emails from the prospect's domain and emails the Ada team sent to them — extract ALL of the following: (1) explicit scoping answers or commitments the prospect gave in writing; (2) go-live dates or launch timelines mentioned; (3) pricing or commercial discussions; (4) technical requirements (APIs, integrations, platforms); (5) any concerns, blockers, or risks mentioned; (6) email addresses of prospect contacts. List the source (email subject + date + sender + Gmail URL) for each fact."
 
-**After both searches, reconcile all results:**
+**After all searches, reconcile all results:**
 - Build a complete list of every Gmail thread found (subject + date + sender + actual URL)
 - For each one, record what scoping data it contributed — even if it only confirmed something already known
 - If a thread yielded nothing useful, note it explicitly as "no new scoping data" — do NOT silently skip it
 - Contradictions with other sources must be flagged — note both values and their sources
+
+**Note**: Gmail often contains the most direct and unambiguous scoping data — prospects frequently give written answers in email that are more precise than what's discussed verbally on calls.
 
 ### 1f — Ada Bot
 - Search Glean for any Ada bot or demo instance associated with this account
@@ -83,14 +116,60 @@ Glean indexes Gmail, so direct emails between the AE/SC team and the prospect ar
 
 ---
 
-## Step 2: Synthesize Scoping Answers
+### ✅ Phase A Checkpoint — Write Scratch File to Google Drive
+
+**THIS STEP IS MANDATORY. Do not proceed to Step 2 until the scratch file is written.**
+
+After all sub-steps 1a–1f are complete, create a scratch file in Google Drive with ALL raw gathered data:
+
+**File name:** `[Account Name] PS Doc Scratch — [YYYY-MM-DD]`
+**Location:** "PS Hand Over Docs" folder (same folder as the final doc)
+
+The scratch file must contain — verbatim, unprocessed, fully quoted:
+1. **Source inventory** — complete numbered list of every source found across 1a–1f (title + date + URL + sub-step)
+2. **Raw SFDC data** — all fields returned, including the verbatim value of `product_channels`
+3. **Raw Granola data** — full meeting notes from every meeting retrieved
+4. **Raw Gong data** — full extracted data from every call and email thread
+5. **Raw Gmail data** — full extracted data from every thread
+6. **Raw Ada data** — configuration + metrics
+
+**How to write the scratch file:**
+- **PRIMARY**: Call `google_docs_create` (or equivalent Google Workspace MCP tool) with the raw data as the content and place it in the PS Hand Over Docs folder
+- **FALLBACK**: Use `import_to_google_doc` if the primary path is unavailable
+
+**After writing the scratch file, output:**
+```
+✅ PHASE A COMPLETE — Scratch file written: [Google Drive URL of scratch file]
+Sources found: [N from 1a] SFDC fields | [N from 1c] Granola meetings | [N from 1d] Gong calls | [N from 1d] Gong email threads | [N from 1e] Gmail threads | Ada bot: [found/not found]
+Proceeding to Phase B (scoping extraction from scratch file)...
+```
+
+---
+
+## Step 2 (Phase B): Synthesize Scoping Answers
+
+**PHASE B READS FROM THE SCRATCH FILE — not from conversation memory.**
+If any data seems missing or unclear, re-read the scratch file before concluding a field is unknown.
 
 **CRITICAL: Before building the document, do a full synthesis pass over ALL gathered data to extract every scoping answer possible. The goal is to populate as many fields as possible with REAL data — TBD is a last resort, not a default.**
 
-### Out-of-Scope Channel Detection
-- If **Email is not in Phase 1 scope**: capture a brief summary of what was discussed and mark `email_out_of_scope = True`
-- If **Voice is not in Phase 1 scope**: capture a brief summary of what was discussed and mark `voice_out_of_scope = True`
-- If a channel IS in scope: fill every table cell from data
+### Channel Scope Determination — SFDC `product_channels` Drives Scope
+
+**The SFDC `product_channels` field is the authoritative source for which channels are in scope. No interpretation, no inference — read the field verbatim from the scratch file.**
+
+Steps:
+1. Read the `product_channels` value from the scratch file (raw SFDC data section)
+2. Quote it verbatim in the contradiction flags section (e.g. `product_channels = "Messaging + Email"`)
+3. Apply this exact mapping — no exceptions:
+   - If `product_channels` contains **"Chat"** or **"Messaging"** → Chat IS in scope
+   - If `product_channels` contains **"Email"** → Email IS in scope
+   - If `product_channels` contains **"Voice"** or **"Phone"** → Voice IS in scope
+4. For each channel NOT listed in `product_channels`:
+   - Mark it `out_of_scope = True`
+   - Capture a brief summary of what was discussed about it in sales conversations (timing, future phase plans, why deferred)
+5. For each channel that IS listed in `product_channels`: fill every table cell from data
+
+**If `product_channels` was not found in SFDC:** flag this explicitly in the contradiction section and fall back to reading scoping discussions across all sources — but explicitly note the fallback was used and why.
 
 ### Chat Scoping Synthesis
 - Current chat platform? (from tech stack / Gong)
@@ -126,7 +205,9 @@ Glean indexes Gmail, so direct emails between the AE/SC team and the prospect ar
 
 ---
 
-## Step 3: Build the Google Doc Content
+## Step 3 (Phase C): Build the Google Doc Content
+
+**PHASE C READS FROM THE SCRATCH FILE — not from conversation memory. Before populating any field, verify the value against the scratch file.**
 
 **CRITICAL: This is a structured scoping form — NOT a narrative brief. Use the exact table structure below. Every table cell must be filled with REAL data. TBD is only for fields where no data was found anywhere.**
 
@@ -152,6 +233,21 @@ Construct the full document content as Markdown with ALL placeholders replaced b
 # Sales to Professional Services Handoff — [Account Name]
 
 **Generated:** [Today's date] | **SC:** [SC Name]
+
+---
+
+## ⚠️ CONTRADICTION FLAGS
+
+> This section is **mandatory** and must appear in every document. It cannot be omitted. If no contradictions were detected, write "None detected." — do not leave this section blank or skip it.
+
+**SFDC `product_channels` (verbatim):** `[paste exact value here — e.g. "Messaging + Email"]`
+**Channels in scope (derived from above):** [Chat / Email / Voice — list only what appears in product_channels]
+**Channels out of scope for Phase 1:** [list channels not in product_channels, or "None"]
+
+**Data contradictions found across sources:**
+[List every field where two or more sources gave different values. Format:
+- **[Field name]**: [Source A] says [value A] | [Source B] says [value B] — PS team to verify with client
+Or if none: "None detected."]
 
 ---
 
@@ -413,27 +509,58 @@ Construct the full document content as Markdown with ALL placeholders replaced b
 **This step is MANDATORY — always run it, every time.**
 
 ### 4a — Find the "PS Hand Over Docs" folder
-Use the Google Workspace MCP to find the folder ID for "PS Hand Over Docs" in Google Drive.
+
+**PRIMARY — Use Google Workspace MCP directly (preferred):**
+> Call `google_drive_search` (or equivalent Google Workspace MCP tool) to find the folder named "PS Hand Over Docs" in Google Drive. Extract the folder ID from the result.
+
+**FALLBACK — If Google Workspace MCP is unavailable:**
+> Use `mcp__glean__search` with query: `"PS Hand Over Docs"`, app filter: `"gdrive"` to locate the folder and extract its ID.
 
 ### 4b — Create the Google Doc
-Use `import_to_google_doc` to create the document:
+
+**PRIMARY — Use Google Workspace MCP directly (preferred):**
+> Call `google_docs_create` (or equivalent Google Workspace MCP tool) to create the document:
+```
+google_docs_create({
+  title: "PS Handoff — [Account Name] — [YYYY-MM-DD]",
+  content: "[full markdown content from Step 3 with all real data substituted in]",
+  folderId: "[PS Hand Over Docs folder ID from 4a]"
+})
+```
+
+**FALLBACK — If Google Workspace MCP is unavailable:**
+> Use `import_to_google_doc` as the fallback:
 ```
 import_to_google_doc({
   title: "PS Handoff — [Account Name] — [YYYY-MM-DD]",
-  content: "[full markdown content from Step 4 with all real data substituted in]",
-  folderId: "[PS Hand Over Docs folder ID from 5a]"
+  content: "[full markdown content from Step 3 with all real data substituted in]",
+  folderId: "[PS Hand Over Docs folder ID from 4a]"
 })
 ```
 
 ---
 
-## Step 5: Report Back
+## Step 5: Post-Doc Completeness Check + Report Back
+
+### Step 5a — Completeness Check (mandatory before reporting)
+
+After the Google Doc is created, perform a completeness check by re-reading the scratch file and comparing it against the doc:
+
+1. **Scan every table cell** in the generated doc for: `TBD`, `Unknown`, blank values
+2. **For each TBD found**: check the scratch file — was there data available that could have filled this field?
+   - If YES: go back and fill it in the doc. Do not leave a TBD if the data exists in the scratch file.
+   - If NO data was found anywhere: leave as TBD and list it in the report
+3. **Verify channel scope is correct**: confirm `## ⚠️ CONTRADICTION FLAGS` section exists and contains the verbatim SFDC `product_channels` value
+4. **Verify all URLs are real**: scan every URL in the doc — if any placeholder or generic URL is found (e.g. `https://www.salesforce.com`, `https://gong.io`), replace with `N/A` and flag it
+
+### Step 5b — Report Back
 
 Tell the user:
 1. ✅ Google Doc URL (clickable link)
-2. A one-line summary: how many Gong calls, Gong email threads, Gmail threads, and Granola meetings were found and checked
-3. A short list of any fields still TBD that need manual input
-4. Any ⚠️ contradiction flags raised in the Data Sources Audit — call these out explicitly so the user knows what to verify
+2. ✅ Scratch file URL (Google Drive link to the raw data file)
+3. A one-line summary: how many Gong calls, Gong email threads, Gmail threads, and Granola meetings were found and checked
+4. A short list of any fields still TBD that need manual input (only fields where no data was found anywhere)
+5. Any ⚠️ contradiction flags raised — call these out explicitly so the user knows what to verify
 
 ---
 
@@ -445,8 +572,9 @@ Tell the user:
 - **Out-of-scope channels**: add notes summary + ⚠️ callout above the table, leave rows as TBD.
 - **Fill from data, not TBD** — TBD is only for genuinely unknown fields.
 - **Never hallucinate** account details — TBD is always better than a wrong answer.
-- **Gong via Glean** — use `mcp__glean__search` with `app: "gong"` and `mcp__glean__chat`. No standalone Gong MCP.
-- **Gmail via Glean** — use `mcp__glean__search` with `app: "gmail"`. Gmail often contains the most explicit written scoping answers — treat it as equally important as Gong.
+- **Gong — primary is Gong MCP** (`gong_search_calls`, `gong_search_emails` or equivalent). If unavailable or returns no results, fall back to `mcp__glean__search` with `app: "gong"` and `mcp__glean__chat`. Never skip Gong data entirely — try both paths.
+- **Gmail — primary is Google Workspace MCP** (`gmail_search` or equivalent). If unavailable or returns no results, fall back to `mcp__glean__search` with `app: "gmail"` and `mcp__glean__chat`. Gmail often contains the most explicit written scoping answers — treat it as equally important as Gong.
+- **Google Doc creation — primary is Google Workspace MCP** (`google_docs_create` or equivalent). If unavailable, fall back to `import_to_google_doc`.
 - **Real links only** — every URL in the document must be an actual URL returned from a data source. Never substitute a homepage, a generic domain, or a placeholder. If no real URL was found, write `N/A`.
 - **Data Sources Audit is always last** — it is the final section of every generated document, written after all content sections are complete.
-- **Contradictions must be flagged** — never silently resolve conflicting data. Always surface both values with their sources in the Data Sources Audit, and call them out in Step 6.
+- **Contradictions must be flagged** — never silently resolve conflicting data. Always surface both values with their sources in the Data Sources Audit, and call them out in Step 5.
