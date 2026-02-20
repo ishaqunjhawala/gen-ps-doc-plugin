@@ -1,7 +1,6 @@
 ---
 name: gen-ps-doc
 description: Generate a Pre-Sales → PS Knowledge Transfer Google Doc for any account (fetches live data from Glean, Granola, Gong, Gmail & Slack)
-argument-hint: "<account name>"
 ---
 
 # Generate PS Knowledge Transfer Doc
